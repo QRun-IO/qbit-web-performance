@@ -68,4 +68,6 @@ Tables and the app use `READ_WRITE_PERMISSIONS` with the base name `web_performa
 ./mvnw verify
 ```
 
-License: Apache-2.0.
+## License
+
+Apache License 2.0. See [LICENSE](LICENSE) and [NOTICE](NOTICE).
