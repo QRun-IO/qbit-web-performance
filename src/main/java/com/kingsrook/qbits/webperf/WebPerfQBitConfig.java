@@ -28,6 +28,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
+import com.kingsrook.qbits.webperf.field.CruxClient;
 import com.kingsrook.qbits.webperf.spi.ChangeEventSource;
 import com.kingsrook.qbits.webperf.spi.ContentResolver;
 import com.kingsrook.qbits.webperf.spi.DeployProbe;
@@ -80,6 +81,7 @@ public class WebPerfQBitConfig implements QBitConfig
    private List<String>        strategies           = new ArrayList<>(List.of("MOBILE", "DESKTOP"));
    private List<String>        categories           = new ArrayList<>(List.of("PERFORMANCE", "ACCESSIBILITY", "BEST_PRACTICES", "SEO"));
    private List<String>        contentTables        = new ArrayList<>();
+   private List<String>        keyPaths             = new ArrayList<>(List.of("/"));
    private int                 concurrency          = 2;
    private int                 maxRunsPerDay        = DEFAULT_MAX_RUNS_PER_DAY;
    private int                 minSpacingMillis     = 2000;
@@ -92,6 +94,7 @@ public class WebPerfQBitConfig implements QBitConfig
    private transient UrlSource               urlSource;
    private transient ContentResolver         contentResolver;
    private transient LabRunner               labRunner;
+   private transient CruxClient              cruxClient;
    private transient RumSource               rumSource;
    private transient List<DeployProbe>       deployProbes       = new ArrayList<>();
    private transient List<ChangeEventSource> changeEventSources = new ArrayList<>();
@@ -151,6 +154,7 @@ public class WebPerfQBitConfig implements QBitConfig
       assertCondition(reportRetentionDays >= 0, "reportRetentionDays must be 0 (keep forever) or more", errors);
       assertCondition(isZone(timeZone), "timeZone is not a valid zone id: " + timeZone, errors);
 
+      assertCondition(keyPaths != null && keyPaths.stream().allMatch(p -> p != null && p.startsWith("/")), "keyPaths must be paths starting with /", errors);
       for(String table : contentTables)
       {
          assertCondition(qInstance.getTable(table) != null, "content table " + table + " is not defined", errors);
@@ -554,6 +558,49 @@ public class WebPerfQBitConfig implements QBitConfig
    public List<String> getContentTables()
    {
       return (contentTables);
+   }
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for keyPaths: the pages tested daily and after deploys
+    ** (tier KEY when synced), e.g. "/", "/blog", "/projects".
+    *******************************************************************************/
+   public WebPerfQBitConfig withKeyPaths(List<String> keyPaths)
+   {
+      this.keyPaths = keyPaths == null ? new ArrayList<>() : new ArrayList<>(keyPaths);
+      return (this);
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for keyPaths.
+    *******************************************************************************/
+   public List<String> getKeyPaths()
+   {
+      return (keyPaths);
+   }
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for cruxClient (defaults to Google's with the API key).
+    *******************************************************************************/
+   public WebPerfQBitConfig withCruxClient(CruxClient cruxClient)
+   {
+      this.cruxClient = cruxClient;
+      return (this);
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for cruxClient.
+    *******************************************************************************/
+   public CruxClient getCruxClient()
+   {
+      return (cruxClient);
    }
 
 

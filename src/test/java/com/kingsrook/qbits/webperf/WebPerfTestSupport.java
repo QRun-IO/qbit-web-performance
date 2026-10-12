@@ -70,7 +70,7 @@ public final class WebPerfTestSupport
          .withHostName("mem")
          .withDatabaseName("webperf_" + UUID.randomUUID().toString().replace("-", ""))
          .withUsername("sa");
-      backend.setJdbcUrl(ConnectionManager.getJdbcUrl(backend) + ";DATABASE_TO_UPPER=FALSE;DB_CLOSE_DELAY=-1");
+      backend.setJdbcUrl("jdbc:h2:mem:" + backend.getDatabaseName() + ";DATABASE_TO_UPPER=FALSE;DB_CLOSE_DELAY=-1");
 
       QInstance qInstance = new QInstance();
       qInstance.addBackend(backend);
@@ -144,6 +144,11 @@ public final class WebPerfTestSupport
       try(Connection connection = ConnectionManager.getConnection((RDBMSBackendMetaData) qInstance.getBackend(BACKEND));
          Statement statement = connection.createStatement())
       {
+         //////////////////////////////////////////////////////////////////////
+         // the RDBMS module pools connections per backend name, so the in-  //
+         // memory database outlives one test: start every test from empty   //
+         //////////////////////////////////////////////////////////////////////
+         statement.execute("DROP ALL OBJECTS");
          for(String sql : statements)
          {
             statement.execute(sql);

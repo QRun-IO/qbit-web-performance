@@ -161,6 +161,10 @@ public class WebPerfQBitProducer implements QBitMetaDataProducer<WebPerfQBitConf
       {
          qBitConfig.setTableNamePrefix(namespace.endsWith("_") ? namespace : namespace + "_");
       }
+      if(StringUtils.hasContent(namespace) && WebPerfQBitConfig.DEFAULT_NAME_PREFIX.equals(qBitConfig.getNamePrefix()))
+      {
+         qBitConfig.withNamePrefix(namespace.replaceAll("[^A-Za-z0-9]", ""));
+      }
 
       List<String> errors = new ArrayList<>();
       qBitConfig.validate(qInstance, errors);
@@ -170,6 +174,10 @@ public class WebPerfQBitProducer implements QBitMetaDataProducer<WebPerfQBitConf
          {
             errors.add("table " + qBitConfig.applyPrefix(base) + " already exists in the instance (another install needs another namespace)");
          }
+      }
+      if(qInstance.getProcess(qBitConfig.qualify(com.kingsrook.qbits.webperf.processes.WebPerfProcesses.SCHEDULED_SYNC)) != null)
+      {
+         errors.add("processes named " + qBitConfig.getNamePrefix() + "* already exist in the instance (another install needs another namespace)");
       }
       if(qInstance.getApp(qBitConfig.getAppName()) != null)
       {
@@ -181,6 +189,7 @@ public class WebPerfQBitProducer implements QBitMetaDataProducer<WebPerfQBitConf
       }
 
       qInstance.addQBit(getQBitMetaData());
+      new WebPerfRuntime(qBitConfig).addSelfToInstance(qInstance);
       new WebPerfMetaData(qBitConfig).addTo(qInstance);
 
       LOG.info("Web performance registered", logPair("tablePrefix", qBitConfig.getTableNamePrefix()), logPair("app", qBitConfig.getAppName()),

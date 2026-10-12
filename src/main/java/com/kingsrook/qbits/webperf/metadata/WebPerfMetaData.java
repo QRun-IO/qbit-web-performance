@@ -27,7 +27,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import com.kingsrook.qbits.webperf.WebPerfQBitConfig;
+import com.kingsrook.qbits.webperf.WebPerfRuntime;
 import com.kingsrook.qbits.webperf.WebPerfSchema;
+import com.kingsrook.qbits.webperf.processes.WebPerfProcesses;
+import com.kingsrook.qbits.webperf.widgets.WebPerfWidgets;
+import com.kingsrook.qqq.backend.core.actions.dashboard.widgets.AbstractWidgetRenderer;
+import com.kingsrook.qqq.backend.core.model.dashboard.widgets.WidgetType;
+import com.kingsrook.qqq.backend.core.model.metadata.code.QCodeReference;
+import com.kingsrook.qqq.backend.core.model.metadata.dashboard.QWidgetMetaData;
+import com.kingsrook.qqq.backend.core.model.metadata.processes.QProcessMetaData;
 import com.kingsrook.qqq.backend.core.instances.QInstanceEnricher;
 import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
 import com.kingsrook.qqq.backend.core.model.metadata.audits.AuditLevel;
@@ -98,6 +106,27 @@ public final class WebPerfMetaData
       {
          qInstance.addPossibleValueSource(QPossibleValueSource.newForTable(config.applyPrefix(base)));
       }
+      for(QProcessMetaData process : WebPerfProcesses.define(config, qInstance))
+      {
+         qInstance.addProcess(process);
+      }
+      addWidget(qInstance, WebPerfWidgets.SITE_SCORES, "Site Scores", WidgetType.HTML, WebPerfWidgets.SiteScores.class);
+      addWidget(qInstance, WebPerfWidgets.TREND, "Performance Trend", WidgetType.LINE_CHART, WebPerfWidgets.Trend.class);
+      addWidget(qInstance, WebPerfWidgets.SLOWEST_PAGES, "Slowest Pages", WidgetType.HTML, WebPerfWidgets.SlowestPages.class);
+      addWidget(qInstance, WebPerfWidgets.OPPORTUNITIES, "Top Opportunities", WidgetType.HTML, WebPerfWidgets.TopOpportunities.class);
+      addWidget(qInstance, WebPerfWidgets.FIELD_STATUS, "Google Field Data", WidgetType.HTML, WebPerfWidgets.FieldDataStatus.class);
+      addWidget(qInstance, WebPerfWidgets.RECENT_RUNS, "Recent Runs", WidgetType.HTML, WebPerfWidgets.RecentRuns.class);
+      addWidget(qInstance, WebPerfWidgets.RECORD_PANEL, "Performance", WidgetType.HTML, WebPerfWidgets.RecordPanel.class);
+
+      List<String> panelTables = new ArrayList<>(config.getContentTables());
+      panelTables.add(0, config.applyPrefix(WebPerfSchema.TARGET));
+      for(String tableName : panelTables)
+      {
+         qInstance.getTable(tableName).addSection(new QFieldSection(config.qualify("Performance"), new QIcon("speed"), Tier.T2)
+            .withLabel("Performance")
+            .withWidgetName(config.qualify(WebPerfWidgets.RECORD_PANEL)));
+      }
+
       qInstance.addApp(app());
       if(config.getParentAppName() != null)
       {
@@ -108,8 +137,28 @@ public final class WebPerfMetaData
 
 
    /*******************************************************************************
-    ** The Performance app: one home (widgets arrive with phase P1) and the
-    ** data tables. No process is in its nav.
+    ** A card widget, full width, carrying the install's prefix so its
+    ** renderer finds the runtime.
+    *******************************************************************************/
+   private void addWidget(QInstance qInstance, String name, String label, WidgetType type, Class<? extends AbstractWidgetRenderer> renderer)
+   {
+      qInstance.addWidget(new QWidgetMetaData()
+         .withName(config.qualify(name))
+         .withLabel(label)
+         .withType(type.getType())
+         .withCodeReference(new QCodeReference(renderer))
+         .withGridColumns(12)
+         .withIsCard(true)
+         .withDefaultValues(new java.util.HashMap<>(Map.of(WebPerfRuntime.INSTANCE_FIELD, config.getTableNamePrefix())))
+         .withPermissionRules(new QPermissionRules().withLevel(PermissionLevel.HAS_ACCESS_PERMISSION)
+            .withPermissionBaseName(config.getPermissionBaseName() + ".view")));
+   }
+
+
+
+   /*******************************************************************************
+    ** The Performance app: its one home (the widgets) and the data tables.
+    ** No process is in its nav.
     **
     ** @return the app
     *******************************************************************************/
@@ -125,6 +174,7 @@ public final class WebPerfMetaData
          .withLabel(config.getAppLabel())
          .withIcon(new QIcon("speed"))
          .withPermissionRules(rules())
+         .withWidgets(WebPerfWidgets.HOME.stream().map(config::qualify).toList())
          .withSection(new QAppSection()
             .withName("data")
             .withLabel("Data")
