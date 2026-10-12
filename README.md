@@ -16,7 +16,7 @@ Design and owner decisions: QRun-IO/qqq `docs/specs/2026-10-12-web-performance-d
 This is a **skeleton (0.1.0-SNAPSHOT)**. It is local only, and the GitHub repository does not exist yet. It contains:
 
 - the producer and config, with validation and secret redaction
-- the nine `webperf_` tables, their lookups and the Performance app
+- the nine `web_performance_` tables, their lookups and the Performance app
 - the host-included changelog, including the seeded budgets (D12)
 - the SPIs: `UrlSource`, `ContentResolver`, `LabRunner`, `DeployProbe`, `RumSource`, `ChangeEventSource`
 - two implementations that need no Google API key: `SitemapUrlSource` and `HttpBuildIdProbe`, which reads Website-Frontend's `/api/build`
@@ -40,27 +40,27 @@ new WebPerfQBitProducer()
 The host owns the database. Include the QBit's changelog from the host's master changelog, with the same prefix as the config:
 
 ```yaml
-- property: { name: webperf.tablePrefix, value: webperf_ }
-- include: { file: db/liquibase/qbit-web-performance/webperf.changelog.sql }
+- property: { name: web_performance.tablePrefix, value: web_performance_ }
+- include: { file: db/liquibase/qbit-web-performance/web_performance.changelog.sql }
 ```
 
 ## Tables
 
 | Table | Written by | Notes |
 |---|---|---|
-| `webperf_target` (Tested Pages) | sitemap sync, people | `label`, `tier` and `enabled` are editable; field-audited |
-| `webperf_lab_run` (Lab Runs) | the QBit | read-only; one Lighthouse run |
-| `webperf_lab_finding` (Findings) | the QBit | read-only; keyed by `(lighthouse_version, audit_id)` |
-| `webperf_lab_report` (Lighthouse Reports) | the QBit | read-only; the gzipped PSI response, kept forever by default |
-| `webperf_field_snapshot` (Google Field Data) | the QBit | read-only; CrUX p75 or NO_DATA |
-| `webperf_budget` (Budgets) | people, seeded | editable; field-audited; 13 seeded reference rows |
-| `webperf_regression` (Regressions) | the QBit, record actions | read-only in the UI; field-audited |
-| `webperf_change_event` (Site Changes) | probes, other QBits | read-only |
-| `webperf_comparison` (Before and After) | the QBit | read-only |
+| `web_performance_target` (Tested Pages) | sitemap sync, people | `label`, `tier` and `enabled` are editable; field-audited |
+| `web_performance_lab_run` (Lab Runs) | the QBit | read-only; one Lighthouse run |
+| `web_performance_lab_finding` (Findings) | the QBit | read-only; keyed by `(lighthouse_version, audit_id)` |
+| `web_performance_lab_report` (Lighthouse Reports) | the QBit | read-only; the gzipped PSI response, kept forever by default |
+| `web_performance_field_snapshot` (Google Field Data) | the QBit | read-only; CrUX p75 or NO_DATA |
+| `web_performance_budget` (Budgets) | people, seeded | editable; field-audited; 13 seeded reference rows |
+| `web_performance_regression` (Regressions) | the QBit, record actions | read-only in the UI; field-audited |
+| `web_performance_change_event` (Site Changes) | probes, other QBits | read-only |
+| `web_performance_comparison` (Before and After) | the QBit | read-only |
 
 ## Permissions
 
-Tables and the app use `READ_WRITE_PERMISSIONS` with the base name `webperf` (configurable), which gives `webperf.read` and `webperf.write`. Processes will add `webperf.test`, `webperf.manage` and `webperf.admin` (design §8.1). No table stores a secret.
+Tables and the app use `READ_WRITE_PERMISSIONS` with the base name `webPerformance` (configurable), which gives `webPerformance.read` and `webPerformance.write`. Processes will add `webPerformance.test`, `webPerformance.manage` and `webPerformance.admin` (design §8.1). No table stores a secret.
 
 ## Build
 

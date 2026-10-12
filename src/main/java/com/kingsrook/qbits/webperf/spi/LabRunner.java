@@ -31,7 +31,7 @@ import java.util.Set;
  ** phase P1 once the Google API key exists, calls the PageSpeed Insights API
  ** v5; a self-hosted Lighthouse runner is an optional later adapter. A runner
  ** returns the complete raw response, so the QBit stores it unchanged
- ** (webperf_lab_report) and parses scores and findings from it.
+ ** (web_performance_lab_report) and parses scores and findings from it.
  *******************************************************************************/
 public interface LabRunner extends Serializable
 {

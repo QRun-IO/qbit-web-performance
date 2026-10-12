@@ -49,7 +49,7 @@ import com.kingsrook.qqq.backend.core.processes.implementations.etl.streamedwith
  *******************************************************************************/
 public final class SyncPagesSteps
 {
-   static final String URLS = "webperfUrls";
+   static final String URLS = "webPerformanceUrls";
 
 
 

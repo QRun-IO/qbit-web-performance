@@ -38,13 +38,13 @@ import com.kingsrook.qqq.backend.module.rdbms.model.metadata.RDBMSBackendMetaDat
  ** One install's runtime state on a QInstance (supplemental meta-data named
  ** "webPerformance.&lt;prefix&gt;", so two namespaced installs never collide):
  ** its config, store and service. Process steps find it through the
- ** "webperfInstance" value every QBit process carries; widgets through their
+ ** "webPerformanceInstance" value every QBit process carries; widgets through their
  ** default values.
  *******************************************************************************/
 public class WebPerfRuntime implements QSupplementalInstanceMetaData
 {
    public static final String NAME_PREFIX    = "webPerformance.";
-   public static final String INSTANCE_FIELD = "webperfInstance";
+   public static final String INSTANCE_FIELD = "webPerformanceInstance";
 
    private final WebPerfQBitConfig config;
 
@@ -83,7 +83,7 @@ public class WebPerfRuntime implements QSupplementalInstanceMetaData
 
 
    /*******************************************************************************
-    ** The runtime a process step belongs to (its webperfInstance value).
+    ** The runtime a process step belongs to (its webPerformanceInstance value).
     **
     ** @param input the step input
     ** @return the runtime

@@ -117,14 +117,14 @@ class WebPerfP1Test
          .withCruxClient(new CruxClient(google.url("/queryRecord"), "AIzaTestKey"));
       new WebPerfQBitProducer().withQBitConfig(config).produce(qInstance);
       new QInstanceValidator().validate(qInstance);
-      WebPerfTestSupport.applyChangelog(qInstance, "webperf_");
+      WebPerfTestSupport.applyChangelog(qInstance, "web_performance_");
       try(Connection connection = ConnectionManager.getConnection((RDBMSBackendMetaData) qInstance.getBackend(WebPerfTestSupport.BACKEND));
          Statement statement = connection.createStatement())
       {
          statement.execute("CREATE TABLE page (id INTEGER PRIMARY KEY, slug VARCHAR(100))");
          statement.execute("INSERT INTO page (id, slug) VALUES (1, 'about'), (2, 'draft')");
       }
-      WebPerfTestSupport.login(qInstance, "webperf.read", "webperf.write", "webperf.test.hasAccess", "webperf.admin.hasAccess", "webperf.view.hasAccess");
+      WebPerfTestSupport.login(qInstance, "webPerformance.read", "webPerformance.write", "webPerformance.test.hasAccess", "webPerformance.admin.hasAccess", "webPerformance.view.hasAccess");
    }
 
 
@@ -146,7 +146,7 @@ class WebPerfP1Test
     *******************************************************************************/
    private WebPerfService service()
    {
-      return (WebPerfRuntime.of(qInstance, "webperf_").service());
+      return (WebPerfRuntime.of(qInstance, "web_performance_").service());
    }
 
 
@@ -284,7 +284,7 @@ class WebPerfP1Test
       config.withLabRunner(null);
       store().update("DELETE FROM {lab_run}");
       service.enqueue(service.requestsFor(service.enabledTargets(false), "MANUAL", "test", Instant.now()), Instant.now());
-      assertEquals(0, WebPerfRuntime.of(qInstance, "webperf_").service().runDue(Instant.now()), "no key: runs wait");
+      assertEquals(0, WebPerfRuntime.of(qInstance, "web_performance_").service().runDue(Instant.now()), "no key: runs wait");
       assertEquals("QUEUED", store().query("SELECT status FROM {lab_run}").get(0).get("status"));
    }
 

@@ -58,8 +58,8 @@ import com.kingsrook.qqq.backend.core.processes.implementations.etl.streamedwith
  *******************************************************************************/
 public final class QueueTestsSteps
 {
-   static final String TARGET_ID = "webperfTargetId";
-   static final String URL       = "webperfUrl";
+   static final String TARGET_ID = "webPerformanceTargetId";
+   static final String URL       = "webPerformanceUrl";
 
 
 

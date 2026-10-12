@@ -29,7 +29,7 @@ import java.util.List;
 /*******************************************************************************
  ** Reports changes that may move performance and are owned by another QBit,
  ** e.g. CDN hostname stage changes from qbit-cdn (design §6.5). They become
- ** webperf_change_event rows, drawn as markers on trends.
+ ** web_performance_change_event rows, drawn as markers on trends.
  *******************************************************************************/
 public interface ChangeEventSource extends Serializable
 {

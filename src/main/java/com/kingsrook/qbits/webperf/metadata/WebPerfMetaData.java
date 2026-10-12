@@ -59,7 +59,7 @@ import com.kingsrook.qqq.backend.module.rdbms.model.metadata.RDBMSTableBackendDe
 /*******************************************************************************
  ** The QBit's tables, lookups and app (design §4, §5). Every table is a
  ** standard, visible QQQ table on the host's RDBMS backend, protected by the
- ** "webperf" permissions (webperf.read / webperf.write by default).
+ ** "webPerformance" permissions (webPerformance.read / webPerformance.write by default).
  **
  ** - Measurements (lab runs, findings, reports, field snapshots,
  **   comparisons, change events) are written only by the QBit's processes:

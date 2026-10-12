@@ -26,7 +26,7 @@ import java.io.Serializable;
 
 /*******************************************************************************
  ** Reports the running build of one component (design §6.3, D7). The QBit
- ** polls its probes; a changed value is recorded as a webperf_change_event and
+ ** polls its probes; a changed value is recorded as a web_performance_change_event and
  ** re-tests the KEY pages after a settle delay.
  *******************************************************************************/
 public interface DeployProbe extends Serializable

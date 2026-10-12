@@ -80,7 +80,7 @@ class WebPerfQBitProducerTest
       assertThat(qInstance.getQBits()).containsKey("com.kingsrook.qbits:web-performance");
       for(String base : WebPerfSchema.TABLES)
       {
-         assertNotNull(qInstance.getTable("webperf_" + base), base);
+         assertNotNull(qInstance.getTable("web_performance_" + base), base);
       }
 
       QAppMetaData app = qInstance.getApp(WebPerfQBitConfig.DEFAULT_APP_NAME);
@@ -94,18 +94,18 @@ class WebPerfQBitProducerTest
       for(String base : List.of(WebPerfSchema.LAB_RUN, WebPerfSchema.LAB_FINDING, WebPerfSchema.LAB_REPORT, WebPerfSchema.FIELD_SNAPSHOT,
          WebPerfSchema.CHANGE_EVENT, WebPerfSchema.COMPARISON, WebPerfSchema.REGRESSION))
       {
-         QTableMetaData table = qInstance.getTable("webperf_" + base);
+         QTableMetaData table = qInstance.getTable("web_performance_" + base);
          assertFalse(table.isCapabilityEnabled(qInstance.getBackend(WebPerfTestSupport.BACKEND), Capability.TABLE_INSERT), base);
          assertTrue(table.getFields().values().stream().noneMatch(f -> Boolean.TRUE.equals(f.getIsEditable())), base);
       }
       for(String base : List.of(WebPerfSchema.TARGET, WebPerfSchema.BUDGET, WebPerfSchema.REGRESSION))
       {
-         assertEquals(AuditLevel.FIELD, qInstance.getTable("webperf_" + base).getAuditRules().getAuditLevel(), base);
+         assertEquals(AuditLevel.FIELD, qInstance.getTable("web_performance_" + base).getAuditRules().getAuditLevel(), base);
       }
-      assertEquals(AuditLevel.NONE, qInstance.getTable("webperf_lab_run").getAuditRules().getAuditLevel());
-      assertTrue(qInstance.getTable("webperf_target").getField("enabled").getIsEditable());
-      assertFalse(qInstance.getTable("webperf_target").getField("latestMobilePerformance").getIsEditable());
-      assertEquals("webperf", qInstance.getTable("webperf_target").getPermissionRules().getPermissionBaseName());
+      assertEquals(AuditLevel.NONE, qInstance.getTable("web_performance_lab_run").getAuditRules().getAuditLevel());
+      assertTrue(qInstance.getTable("web_performance_target").getField("enabled").getIsEditable());
+      assertFalse(qInstance.getTable("web_performance_target").getField("latestMobilePerformance").getIsEditable());
+      assertEquals("webPerformance", qInstance.getTable("web_performance_target").getPermissionRules().getPermissionBaseName());
    }
 
 
@@ -136,7 +136,7 @@ class WebPerfQBitProducerTest
       new WebPerfQBitProducer().withQBitConfig(WebPerfTestSupport.config()).produce(qInstance);
       new WebPerfQBitProducer().withNamespace("shop").withQBitConfig(WebPerfTestSupport.config().withAppName("shopPerformance")).produce(qInstance);
       assertNotNull(qInstance.getTable("shop_target"));
-      assertNotNull(qInstance.getTable("webperf_target"));
+      assertNotNull(qInstance.getTable("web_performance_target"));
 
       assertThatThrownBy(() -> new WebPerfQBitProducer().withQBitConfig(WebPerfTestSupport.config()).produce(qInstance))
          .isInstanceOf(QException.class).hasMessageContaining("already exists");
@@ -196,7 +196,7 @@ class WebPerfQBitProducerTest
       assertTrue(config.hasGoogleApiKey());
       assertThat(config.toString()).doesNotContain("AIzaSecretValue").contains("<redacted>");
       assertThat(WebPerfTestSupport.config().toString()).contains("googleApiKey=<none>");
-      assertEquals("webperfTestPageSpeed", config.qualify("TestPageSpeed"));
+      assertEquals("webPerformanceTestPageSpeed", config.qualify("TestPageSpeed"));
 
       config.withFeatures(EnumSet.of(WebPerfFeature.LAB));
       assertTrue(config.isOn(WebPerfFeature.LAB));

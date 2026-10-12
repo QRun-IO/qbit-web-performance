@@ -55,11 +55,11 @@ public class WebPerfQBitConfig implements QBitConfig
 {
    private static final long serialVersionUID = 1L;
 
-   public static final String DEFAULT_TABLE_PREFIX     = "webperf_";
-   public static final String DEFAULT_NAME_PREFIX      = "webperf";
+   public static final String DEFAULT_TABLE_PREFIX     = "web_performance_";
+   public static final String DEFAULT_NAME_PREFIX      = "webPerformance";
    public static final String DEFAULT_APP_NAME         = "webPerformance";
    public static final String DEFAULT_APP_LABEL        = "Performance";
-   public static final String DEFAULT_PERMISSION_BASE  = "webperf";
+   public static final String DEFAULT_PERMISSION_BASE  = "webPerformance";
    public static final int    DEFAULT_MAX_RUNS_PER_DAY = 500;
 
    /** Google's documented PSI quota: 25,000 queries a day. */
@@ -179,7 +179,7 @@ public class WebPerfQBitConfig implements QBitConfig
     ** A table base name with the prefix.
     **
     ** @param baseName e.g. "target"
-    ** @return e.g. "webperf_target"
+    ** @return e.g. "web_performance_target"
     *******************************************************************************/
    public String applyPrefix(String baseName)
    {
@@ -192,7 +192,7 @@ public class WebPerfQBitConfig implements QBitConfig
     ** A process, widget or app-level name with the name prefix.
     **
     ** @param name e.g. "TestPageSpeed"
-    ** @return e.g. "webperfTestPageSpeed"
+    ** @return e.g. "webPerformanceTestPageSpeed"
     *******************************************************************************/
    public String qualify(String name)
    {

@@ -51,8 +51,8 @@ import com.kingsrook.qqq.backend.core.processes.implementations.etl.streamedwith
  *******************************************************************************/
 public final class FieldDataSteps
 {
-   static final String ORIGIN = "webperfOrigin";
-   static final String URLS   = "webperfUrls";
+   static final String ORIGIN = "webPerformanceOrigin";
+   static final String URLS   = "webPerformanceUrls";
 
 
 

@@ -68,7 +68,7 @@ public final class WebPerfTestSupport
          .withName(BACKEND)
          .withVendor("h2")
          .withHostName("mem")
-         .withDatabaseName("webperf_" + UUID.randomUUID().toString().replace("-", ""))
+         .withDatabaseName("web_performance_" + UUID.randomUUID().toString().replace("-", ""))
          .withUsername("sa");
       backend.setJdbcUrl("jdbc:h2:mem:" + backend.getDatabaseName() + ";DATABASE_TO_UPPER=FALSE;DB_CLOSE_DELAY=-1");
 
@@ -110,7 +110,7 @@ public final class WebPerfTestSupport
 
    /*******************************************************************************
     ** Apply the QBit's changelog with a prefix: each changeset's statements in
-    ** order, comment lines skipped, ${webperf.tablePrefix} substituted.
+    ** order, comment lines skipped, ${web_performance.tablePrefix} substituted.
     **
     ** @param qInstance the instance
     ** @param prefix    the table prefix

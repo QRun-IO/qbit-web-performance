@@ -59,7 +59,7 @@ import com.kingsrook.qqq.backend.core.processes.implementations.etl.streamedwith
  **   daily CrUX refresh. They exist without a scheduler and run only with one.
  **
  ** Permissions: actions that queue tests need "&lt;base&gt;.test.hasAccess",
- ** sync and field data need "&lt;base&gt;.admin.hasAccess" (base "webperf").
+ ** sync and field data need "&lt;base&gt;.admin.hasAccess" (base "webPerformance").
  *******************************************************************************/
 public final class WebPerfProcesses
 {
@@ -75,7 +75,7 @@ public final class WebPerfProcesses
    public static final String SCHEDULED_FIELD     = "ScheduledFieldData";
 
    /** Process value naming the trigger recorded on queued runs. */
-   public static final String TRIGGER_FIELD = "webperfTrigger";
+   public static final String TRIGGER_FIELD = "webPerformanceTrigger";
 
    public static final int    WORKER_REPEAT_SECONDS = 60;
    public static final String KEY_TESTS_CRON        = "0 30 3 * * ?";

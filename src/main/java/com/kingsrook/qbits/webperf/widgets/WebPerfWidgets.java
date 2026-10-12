@@ -85,7 +85,7 @@ public final class WebPerfWidgets
 
 
    /*******************************************************************************
-    ** The runtime a widget belongs to (its webperfInstance default value).
+    ** The runtime a widget belongs to (its webPerformanceInstance default value).
     *******************************************************************************/
    static WebPerfRuntime runtime(RenderWidgetInput input)
    {

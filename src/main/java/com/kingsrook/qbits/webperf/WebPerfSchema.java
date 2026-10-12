@@ -26,7 +26,7 @@ import java.util.List;
 
 /*******************************************************************************
  ** The QBit's table base names (design §4.2). The SQL and QQQ table name is
- ** the configured prefix plus the base name, e.g. "webperf_target".
+ ** the configured prefix plus the base name, e.g. "web_performance_target".
  *******************************************************************************/
 public final class WebPerfSchema
 {
@@ -45,10 +45,10 @@ public final class WebPerfSchema
       FIELD_SNAPSHOT, LAB_REPORT);
 
    /** Classpath location of the host-included Liquibase changelog. */
-   public static final String CHANGELOG = "db/liquibase/qbit-web-performance/webperf.changelog.sql";
+   public static final String CHANGELOG = "db/liquibase/qbit-web-performance/web_performance.changelog.sql";
 
    /** The changelog property holding the table prefix (must equal the config's prefix). */
-   public static final String CHANGELOG_PREFIX_PROPERTY = "webperf.tablePrefix";
+   public static final String CHANGELOG_PREFIX_PROPERTY = "web_performance.tablePrefix";
 
 
 

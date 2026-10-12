@@ -51,8 +51,8 @@ import static com.kingsrook.qqq.backend.core.logging.LogUtils.logPair;
  **    .produce(qInstance);
  ** </pre>
  ** The tables come from the host-included changelog
- ** (db/liquibase/qbit-web-performance/webperf.changelog.sql), whose
- ** webperf.tablePrefix property must equal the config's prefix. The QBit
+ ** (db/liquibase/qbit-web-performance/web_performance.changelog.sql), whose
+ ** web_performance.tablePrefix property must equal the config's prefix. The QBit
  ** never runs DDL.
  *******************************************************************************/
 public class WebPerfQBitProducer implements QBitMetaDataProducer<WebPerfQBitConfig>

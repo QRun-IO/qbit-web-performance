@@ -76,7 +76,7 @@ class WebPerfSchemaTest
       QInstance qInstance = WebPerfTestSupport.newInstance();
       new WebPerfQBitProducer().withQBitConfig(WebPerfTestSupport.config().withTableNamePrefix(prefix)).produce(qInstance);
       WebPerfTestSupport.applyChangelog(qInstance, prefix);
-      WebPerfTestSupport.login(qInstance, "webperf.read", "webperf.write");
+      WebPerfTestSupport.login(qInstance, "webPerformance.read", "webPerformance.write");
       return (qInstance);
    }
 
@@ -88,13 +88,13 @@ class WebPerfSchemaTest
    @Test
    void testEveryFieldHasItsColumn() throws Exception
    {
-      QInstance qInstance = installed("webperf_");
+      QInstance qInstance = installed("web_performance_");
       try(Connection connection = ConnectionManager.getConnection((RDBMSBackendMetaData) qInstance.getBackend(WebPerfTestSupport.BACKEND)))
       {
          DatabaseMetaData metaData = connection.getMetaData();
          for(String base : WebPerfSchema.TABLES)
          {
-            QTableMetaData table   = qInstance.getTable("webperf_" + base);
+            QTableMetaData table   = qInstance.getTable("web_performance_" + base);
             Set<String>    columns = new HashSet<>();
             try(ResultSet resultSet = metaData.getColumns(null, null, table.getName(), null))
             {
@@ -125,8 +125,8 @@ class WebPerfSchemaTest
    @Test
    void testSeededBudgets() throws Exception
    {
-      QInstance qInstance = installed("webperf_");
-      List<QRecord> budgets = new QueryAction().execute(new QueryInput("webperf_budget").withFilter(new QQueryFilter())).getRecords();
+      QInstance qInstance = installed("web_performance_");
+      List<QRecord> budgets = new QueryAction().execute(new QueryInput("web_performance_budget").withFilter(new QQueryFilter())).getRecords();
       assertEquals(13, budgets.size());
       assertThat(budgets).allMatch(r -> Boolean.TRUE.equals(r.getValueBoolean("seeded")) && Boolean.TRUE.equals(r.getValueBoolean("enabled")));
 
@@ -136,14 +136,14 @@ class WebPerfSchemaTest
       QRecord critical = budgets.stream().filter(r -> "CRITICAL".equals(r.getValueString("severity"))).findFirst().orElseThrow();
       assertEquals("KEY", critical.getValueString("scopeValue"));
 
-      WebPerfTestSupport.applyChangelog(qInstance, "webperf_");
-      assertEquals(13, new QueryAction().execute(new QueryInput("webperf_budget").withFilter(new QQueryFilter())).getRecords().size());
+      WebPerfTestSupport.applyChangelog(qInstance, "web_performance_");
+      assertEquals(13, new QueryAction().execute(new QueryInput("web_performance_budget").withFilter(new QQueryFilter())).getRecords().size());
    }
 
 
 
    /*******************************************************************************
-    ** A tested page and a budget can be added by a user with webperf.write,
+    ** A tested page and a budget can be added by a user with webPerformance.write,
     ** under any prefix; the unique key keeps one row per site and URL.
     *******************************************************************************/
    @Test

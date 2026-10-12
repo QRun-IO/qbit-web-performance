@@ -70,7 +70,7 @@
          <groupId>com.kingsrook.qqq</groupId>
          <artifactId>qqq-backend-core</artifactId>
       </dependency>
-      <!-- RDBMS table backend details for the webperf_ tables. -->
+      <!-- RDBMS table backend details for the web_performance_ tables. -->
       <dependency>
          <groupId>com.kingsrook.qqq</groupId>
          <artifactId>qqq-backend-module-rdbms</artifactId>
