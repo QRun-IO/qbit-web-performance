@@ -697,12 +697,21 @@ public class WebPerfService
          throw (new IllegalStateException("No Google API key is configured, so Google field data cannot be checked"));
       }
       Map<String, Integer> counts = new LinkedHashMap<>();
+      boolean              first  = true;
       for(Map.Entry<String, List<String>> scope : keys.entrySet())
       {
          for(String key : scope.getValue())
          {
             for(String formFactor : CruxClient.FORM_FACTORS)
             {
+               //////////////////////////////////////////////////////////////
+               // pace the queries under the API's 150 a minute per project //
+               //////////////////////////////////////////////////////////////
+               if(!first && config.getCruxSpacingMillis() > 0)
+               {
+                  Thread.sleep(config.getCruxSpacingMillis());
+               }
+               first = false;
                CruxClient.CruxResult result = client.query(scope.getKey(), key, formFactor);
                storeField(result, now);
                counts.merge(result.status(), 1, Integer::sum);

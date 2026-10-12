@@ -110,6 +110,7 @@ class WebPerfP1Test
          .withContentTables(List.of("page"))
          .withKeyPaths(List.of("/"))
          .withMinSpacingMillis(0)
+         .withCruxSpacingMillis(0)
          .withUrlSource((UrlSource) () -> new ArrayList<>(source))
          .withContentResolver((ContentResolver) path -> "/about".equals(path) ? new ContentResolver.ContentRef("page", 1L) : null)
          .withLabRunner(new PsiLabRunner(google.url("/runPagespeed"), "AIzaTestKey"))

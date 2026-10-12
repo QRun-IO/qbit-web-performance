@@ -85,6 +85,7 @@ public class WebPerfQBitConfig implements QBitConfig
    private int                 concurrency          = 2;
    private int                 maxRunsPerDay        = DEFAULT_MAX_RUNS_PER_DAY;
    private int                 minSpacingMillis     = 2000;
+   private int                 cruxSpacingMillis    = 400;
    private int                 publishSettleSeconds = 180;
    private int                 deploySettleSeconds  = 300;
    private int                 reportRetentionDays  = 0;
@@ -664,6 +665,28 @@ public class WebPerfQBitConfig implements QBitConfig
    public int getMinSpacingMillis()
    {
       return (minSpacingMillis);
+   }
+
+
+
+   /*******************************************************************************
+    ** Fluent setter for cruxSpacingMillis: the pause between CrUX queries
+    ** (400 ms keeps them under the API's 150 a minute).
+    *******************************************************************************/
+   public WebPerfQBitConfig withCruxSpacingMillis(int cruxSpacingMillis)
+   {
+      this.cruxSpacingMillis = cruxSpacingMillis;
+      return (this);
+   }
+
+
+
+   /*******************************************************************************
+    ** Getter for cruxSpacingMillis.
+    *******************************************************************************/
+   public int getCruxSpacingMillis()
+   {
+      return (cruxSpacingMillis);
    }
 
 
