@@ -105,7 +105,7 @@ class WebPerfQBitProducerTest
       assertEquals(AuditLevel.NONE, qInstance.getTable("web_performance_lab_run").getAuditRules().getAuditLevel());
       assertTrue(qInstance.getTable("web_performance_target").getField("enabled").getIsEditable());
       assertFalse(qInstance.getTable("web_performance_target").getField("latestMobilePerformance").getIsEditable());
-      assertEquals("webPerformance", qInstance.getTable("web_performance_target").getPermissionRules().getPermissionBaseName());
+      assertEquals("web_performance", qInstance.getTable("web_performance_target").getPermissionRules().getPermissionBaseName());
    }
 
 

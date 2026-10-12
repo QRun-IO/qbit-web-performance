@@ -59,7 +59,7 @@ public class WebPerfQBitConfig implements QBitConfig
    public static final String DEFAULT_NAME_PREFIX      = "webPerformance";
    public static final String DEFAULT_APP_NAME         = "webPerformance";
    public static final String DEFAULT_APP_LABEL        = "Performance";
-   public static final String DEFAULT_PERMISSION_BASE  = "webPerformance";
+   public static final String DEFAULT_PERMISSION_BASE  = "web_performance";
    public static final int    DEFAULT_MAX_RUNS_PER_DAY = 500;
 
    /** Google's documented PSI quota: 25,000 queries a day. */

@@ -124,7 +124,7 @@ class WebPerfP1Test
          statement.execute("CREATE TABLE page (id INTEGER PRIMARY KEY, slug VARCHAR(100))");
          statement.execute("INSERT INTO page (id, slug) VALUES (1, 'about'), (2, 'draft')");
       }
-      WebPerfTestSupport.login(qInstance, "webPerformance.read", "webPerformance.write", "webPerformance.test.hasAccess", "webPerformance.admin.hasAccess", "webPerformance.view.hasAccess");
+      WebPerfTestSupport.login(qInstance, "web_performance.read", "web_performance.write", "web_performance.test.hasAccess", "web_performance.admin.hasAccess", "web_performance.view.hasAccess");
    }
 
 

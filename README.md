@@ -60,7 +60,7 @@ The host owns the database. Include the QBit's changelog from the host's master 
 
 ## Permissions
 
-Tables and the app use `READ_WRITE_PERMISSIONS` with the base name `webPerformance` (configurable), which gives `webPerformance.read` and `webPerformance.write`. Processes will add `webPerformance.test`, `webPerformance.manage` and `webPerformance.admin` (design §8.1). No table stores a secret.
+Tables and the app use `READ_WRITE_PERMISSIONS` with the base name `web_performance` (configurable), which gives `web_performance.read` and `web_performance.write`. Processes will add `web_performance.test`, `web_performance.manage` and `web_performance.admin` (design §8.1). No table stores a secret.
 
 ## Build
 

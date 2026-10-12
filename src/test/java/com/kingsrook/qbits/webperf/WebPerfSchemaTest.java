@@ -76,7 +76,7 @@ class WebPerfSchemaTest
       QInstance qInstance = WebPerfTestSupport.newInstance();
       new WebPerfQBitProducer().withQBitConfig(WebPerfTestSupport.config().withTableNamePrefix(prefix)).produce(qInstance);
       WebPerfTestSupport.applyChangelog(qInstance, prefix);
-      WebPerfTestSupport.login(qInstance, "webPerformance.read", "webPerformance.write");
+      WebPerfTestSupport.login(qInstance, "web_performance.read", "web_performance.write");
       return (qInstance);
    }
 
@@ -143,7 +143,7 @@ class WebPerfSchemaTest
 
 
    /*******************************************************************************
-    ** A tested page and a budget can be added by a user with webPerformance.write,
+    ** A tested page and a budget can be added by a user with web_performance.write,
     ** under any prefix; the unique key keeps one row per site and URL.
     *******************************************************************************/
    @Test
