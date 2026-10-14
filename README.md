@@ -13,15 +13,19 @@ Design and owner decisions: QRun-IO/qqq `docs/specs/2026-10-12-web-performance-d
 
 ## Status
 
-This is a **skeleton (0.1.0-SNAPSHOT)**. It is local only, and the GitHub repository does not exist yet. It contains:
+The lab and Google field-data runners, queue, schedules, record actions and performance widgets are implemented. This change adds durable site changes, budget evaluation, confirmed lab regressions and before/after lab comparisons.
 
-- the producer and config, with validation and secret redaction
-- the nine `web_performance_` tables, their lookups and the Performance app
-- the host-included changelog, including the seeded budgets (D12)
-- the SPIs: `UrlSource`, `ContentResolver`, `LabRunner`, `DeployProbe`, `RumSource`, `ChangeEventSource`
-- two implementations that need no Google API key: `SitemapUrlSource` and `HttpBuildIdProbe`, which reads Website-Frontend's `/api/build`
+- Deploy probes run at startup through the scheduler and every five minutes. New build ids are recorded once per component, and KEY pages are queued after `deploySettleSeconds`. External `ChangeEventSource` events are deduplicated by source registration and their complete event tuple. Keep source registration order stable across restarts. Content events queue enabled pages after `publishSettleSeconds`, because the current SPI does not identify affected target ids.
+- Each run records the latest observed frontend build, hostname CDN stage and preceding site change when it starts. A rollback to an already recorded build updates its last observation without duplicating its change row.
+- Enabled LAB budgets match site, tier, target, content table or literal path prefix, plus strategy and metric. Comparators describe acceptable values. Breaches are recorded in Regressions with the budget id; there is no separate budget-check table in the design. The strongest matching severity wins. CRUX budgets evaluate URL p75 snapshots; NO_DATA, errors and origin fallback are never treated as page measurements.
+- Statistical lab baselines require five successful SCHEDULE, CONFIRM or SITE_AUDIT runs in the preceding 30 days on the same Lighthouse major version. Performance drops of 10 points, LCP increases of both 25% and 500 ms, CLS increases of 0.05, TBT increases of 200 ms, and budget breaches create suspected regressions. Two independent confirmation runs provide a median of three. Category drops of 5 points and newly failing Accessibility, Best Practices or SEO audits confirm immediately. Recovery requires a median of three later runs. Lighthouse major changes record a marker and reset incompatible baselines.
+- The page's open count includes suspected and confirmed regressions. **Dismiss** and **Mark resolved** require a note and `web_performance.manage.hasAccess`, use standard Review/Result summary lines, and preserve history.
+- **Compare before and after** uses three successful same-version lab samples on each side of a change, with page, sample counts and actual time windows. It stores Performance, LCP, FCP and measured TTFB when available. Results are also updated after attributed runs complete. CDN HEADERS_ONLY queues three samples per strategy; LIVE queues three at +1 hour and three at +24 hours. Insufficient history produces no invented comparison.
+- Confirmed regressions raise keyed `webperf.regression` alerts through QQQ core `QAlerts`; recovery, dismissal and manual resolution clear them. `ALERTS` can be disabled. Without an Alerts QBit, core uses its logging sink. No Alerts QBit dependency is required.
 
-Not built yet: the PSI and CrUX runners (they need the key), the queue worker, the schedules, the actions, the widgets, and the Alerts qbit producer integration.
+Evaluation progress and related writes commit together. Retrying an evaluation does not duplicate incidents, and retrying a failed confirmation preserves its sample reference. The additive changelog must be applied before running the new worker. This version requires QQQ **4.1.0-RC.6** for the core alerts API.
+
+RUM drift and RUM/country before-and-after comparisons remain separate work: the existing `RumSource` exposes fixed daily/28-day aggregates, not arbitrary before/after windows. Enum field metadata and Tested Pages insertion are also outside this change.
 
 ## Install
 

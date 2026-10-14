@@ -25,6 +25,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import com.kingsrook.qbits.webperf.WebPerfRuntime;
+import com.kingsrook.qbits.webperf.service.WebPerfChangeService;
 import com.kingsrook.qbits.webperf.service.WebPerfService;
 import com.kingsrook.qqq.backend.core.actions.processes.BackendStep;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
@@ -50,6 +51,30 @@ public final class ScheduledSteps
     *******************************************************************************/
    private ScheduledSteps()
    {
+   }
+
+
+
+   /*******************************************************************************
+    ** Poll deploy probes and external change sources on the existing scheduler.
+    *******************************************************************************/
+   public static class ProbeChanges implements BackendStep
+   {
+      /*******************************************************************************
+       ** Store changes and queue the affected pages.
+       *******************************************************************************/
+      @Override
+      public void run(RunBackendStepInput input, RunBackendStepOutput output) throws QException
+      {
+         try
+         {
+            new WebPerfChangeService(WebPerfRuntime.forInput(input).store()).poll(Instant.now());
+         }
+         catch(Exception e)
+         {
+            throw (new QException("Checking site changes failed", e));
+         }
+      }
    }
 
 

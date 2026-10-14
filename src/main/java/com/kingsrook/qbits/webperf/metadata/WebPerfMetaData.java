@@ -26,20 +26,24 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import com.kingsrook.qbits.webperf.WebPerfFeature;
 import com.kingsrook.qbits.webperf.WebPerfQBitConfig;
 import com.kingsrook.qbits.webperf.WebPerfRuntime;
 import com.kingsrook.qbits.webperf.WebPerfSchema;
 import com.kingsrook.qbits.webperf.processes.WebPerfProcesses;
+import com.kingsrook.qbits.webperf.service.WebPerfEvaluationService;
 import com.kingsrook.qbits.webperf.widgets.WebPerfWidgets;
 import com.kingsrook.qqq.backend.core.actions.dashboard.widgets.AbstractWidgetRenderer;
-import com.kingsrook.qqq.backend.core.model.dashboard.widgets.WidgetType;
-import com.kingsrook.qqq.backend.core.model.metadata.code.QCodeReference;
-import com.kingsrook.qqq.backend.core.model.metadata.dashboard.QWidgetMetaData;
-import com.kingsrook.qqq.backend.core.model.metadata.processes.QProcessMetaData;
+import com.kingsrook.qqq.backend.core.alerts.AlertSeverity;
+import com.kingsrook.qqq.backend.core.alerts.AlertsInstanceMetaData;
+import com.kingsrook.qqq.backend.core.alerts.QAlertTypeMetaData;
 import com.kingsrook.qqq.backend.core.instances.QInstanceEnricher;
+import com.kingsrook.qqq.backend.core.model.dashboard.widgets.WidgetType;
 import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
 import com.kingsrook.qqq.backend.core.model.metadata.audits.AuditLevel;
 import com.kingsrook.qqq.backend.core.model.metadata.audits.QAuditRules;
+import com.kingsrook.qqq.backend.core.model.metadata.code.QCodeReference;
+import com.kingsrook.qqq.backend.core.model.metadata.dashboard.QWidgetMetaData;
 import com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldMetaData;
 import com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldType;
 import com.kingsrook.qqq.backend.core.model.metadata.layout.QAppMetaData;
@@ -48,6 +52,7 @@ import com.kingsrook.qqq.backend.core.model.metadata.layout.QIcon;
 import com.kingsrook.qqq.backend.core.model.metadata.permissions.PermissionLevel;
 import com.kingsrook.qqq.backend.core.model.metadata.permissions.QPermissionRules;
 import com.kingsrook.qqq.backend.core.model.metadata.possiblevalues.QPossibleValueSource;
+import com.kingsrook.qqq.backend.core.model.metadata.processes.QProcessMetaData;
 import com.kingsrook.qqq.backend.core.model.metadata.tables.Capability;
 import com.kingsrook.qqq.backend.core.model.metadata.tables.QFieldSection;
 import com.kingsrook.qqq.backend.core.model.metadata.tables.QTableMetaData;
@@ -98,6 +103,16 @@ public final class WebPerfMetaData
     *******************************************************************************/
    public void addTo(QInstance qInstance)
    {
+      if(config.isOn(WebPerfFeature.ALERTS))
+      {
+         AlertsInstanceMetaData.ofOrWithNew(qInstance).withAlertType(
+            new QAlertTypeMetaData()
+               .withName(WebPerfEvaluationService.ALERT_TYPE)
+               .withLabel("Web performance regression").withSourceQBitName("web-performance")
+               .withDefaultSeverity(AlertSeverity.WARNING)
+               .withSubjectTableName(config.applyPrefix(WebPerfSchema.REGRESSION))
+               .withVisibilityPermission(config.getPermissionBaseName() + ".read"));
+      }
       for(QTableMetaData table : tables().values())
       {
          qInstance.addTable(table);
@@ -277,7 +292,10 @@ public final class WebPerfMetaData
          f("lcpElement", QFieldType.STRING, "LCP Element").withMaxLength(300),
          f("runWarnings", QFieldType.STRING, "Warnings").withMaxLength(2000),
          f("deploymentId", QFieldType.STRING, "Frontend Build").withMaxLength(64),
-         f("cdnStage", QFieldType.STRING, "CDN Stage").withMaxLength(20)));
+         f("cdnStage", QFieldType.STRING, "CDN Stage").withMaxLength(20),
+         f("ttfbMs", QFieldType.INTEGER, "TTFB (ms)"),
+         f("evaluatedAt", QFieldType.DATE_TIME, "Evaluated"),
+         f("changeEventId", QFieldType.LONG, "Site Change").withPossibleValueSourceName(config.applyPrefix(WebPerfSchema.CHANGE_EVENT))));
 
       return (table(WebPerfSchema.LAB_RUN, "Lab Runs", "speed", fields, false, Set.of())
          .withRecordLabelFormatAndFields("%s %s", "strategy", "url")
@@ -286,7 +304,7 @@ public final class WebPerfMetaData
          .withSection(section("metrics", "Lab Metrics", "timer", Tier.T2, "fcpMs", "lcpMs", "tbtMs", "cls", "speedIndexMs", "lcpElement"))
          .withSection(section("details", "Details", "info", Tier.T2, "targetId", "finalUrl", "runner", "triggerRef", "batchId", "notBefore",
             "queuedAt", "startedAt", "attempts", "httpStatus", "errorMessage", "lighthouseVersion", "chromeUserAgent", "benchmarkIndex",
-            "runWarnings", "deploymentId", "cdnStage"))
+            "runWarnings", "deploymentId", "cdnStage", "ttfbMs", "evaluatedAt", "changeEventId"))
          .withSection(dates()));
    }
 
@@ -363,11 +381,12 @@ public final class WebPerfMetaData
          f("p75FcpMs", QFieldType.INTEGER, "FCP p75 (ms)"),
          f("p75TtfbMs", QFieldType.INTEGER, "TTFB p75 (ms)"),
          f("distributions", QFieldType.TEXT, "Distributions"),
-         f("lastCheckedAt", QFieldType.DATE_TIME, "Last Checked")));
+         f("lastCheckedAt", QFieldType.DATE_TIME, "Last Checked"),
+         f("evaluatedAt", QFieldType.DATE_TIME, "Evaluated")));
 
       return (table(WebPerfSchema.FIELD_SNAPSHOT, "Google Field Data", "public", fields, false, Set.of())
          .withRecordLabelFormatAndFields("%s %s", "scopeKey", "formFactor")
-         .withSection(section("snapshot", "Snapshot", "public", Tier.T1, "id", "scopeKey", "scope", "formFactor", "status", "lastCheckedAt"))
+         .withSection(section("snapshot", "Snapshot", "public", Tier.T1, "id", "scopeKey", "scope", "formFactor", "status", "lastCheckedAt", "evaluatedAt"))
          .withSection(section("p75", "p75 (28 days)", "insights", Tier.T2, "p75LcpMs", "p75InpMs", "p75Cls", "p75FcpMs", "p75TtfbMs",
             "periodStart", "periodEnd", "source", "distributions"))
          .withSection(dates()));
@@ -427,14 +446,18 @@ public final class WebPerfMetaData
          f("detectedAt", QFieldType.DATE_TIME, "Detected"),
          f("confirmedAt", QFieldType.DATE_TIME, "Confirmed"),
          f("resolvedAt", QFieldType.DATE_TIME, "Resolved"),
-         f("resolutionNote", QFieldType.STRING, "Resolution Note").withMaxLength(2000)));
+         f("resolutionNote", QFieldType.STRING, "Resolution Note").withMaxLength(2000),
+         f("firstRunId", QFieldType.LONG, "First Run").withPossibleValueSourceName(config.applyPrefix(WebPerfSchema.LAB_RUN)),
+         f("checkpointRunId", QFieldType.LONG, "Confirmation Run").withPossibleValueSourceName(config.applyPrefix(WebPerfSchema.LAB_RUN)),
+         f("lighthouseMajor", QFieldType.STRING, "Lighthouse Major").withMaxLength(20),
+         f("failedAudits", QFieldType.STRING, "Newly Failing Audits").withMaxLength(2000)));
 
       return (table(WebPerfSchema.REGRESSION, "Regressions", "trending_down", fields, true, Set.of())
          .withRecordLabelFormatAndFields("%s %s", "metric", "status")
          .withSection(section("regression", "Regression", "trending_down", Tier.T1, "id", "targetId", "metric", "strategy", "baselineValue",
             "currentValue", "delta", "severity", "status"))
          .withSection(section("details", "Details", "info", Tier.T2, "source", "contentTable", "contentId", "baselineRef", "currentRef",
-            "budgetId", "causeChangeEventId", "detectedAt", "confirmedAt", "resolvedAt", "resolutionNote"))
+            "budgetId", "causeChangeEventId", "detectedAt", "confirmedAt", "resolvedAt", "resolutionNote", "firstRunId", "checkpointRunId", "lighthouseMajor", "failedAudits"))
          .withSection(dates()));
    }
 
@@ -452,12 +475,15 @@ public final class WebPerfMetaData
          f("toValue", QFieldType.STRING, "To").withMaxLength(200),
          f("observedAt", QFieldType.DATE_TIME, "Observed"),
          f("source", QFieldType.STRING, "Source").withMaxLength(20),
-         f("note", QFieldType.STRING, "Note").withMaxLength(2000)));
+         f("note", QFieldType.STRING, "Note").withMaxLength(2000),
+         f("lastSeenAt", QFieldType.DATE_TIME, "Last Observed"),
+         f("eventKey", QFieldType.STRING, "Source Event Key").withMaxLength(64),
+         f("siteKey", QFieldType.STRING, "Site").withMaxLength(200)));
 
       return (table(WebPerfSchema.CHANGE_EVENT, "Site Changes", "change_circle", fields, false, Set.of())
          .withRecordLabelFormatAndFields("%s %s", "kind", "toValue")
          .withSection(section("change", "Change", "change_circle", Tier.T1, "id", "kind", "component", "fromValue", "toValue", "observedAt",
-            "source", "note"))
+            "source", "note", "lastSeenAt", "eventKey", "siteKey"))
          .withSection(dates()));
    }
 
@@ -470,6 +496,7 @@ public final class WebPerfMetaData
    {
       List<QFieldMetaData> fields = withCommon(List.of(
          f("changeEventId", QFieldType.LONG, "Change").withPossibleValueSourceName(config.applyPrefix(WebPerfSchema.CHANGE_EVENT)),
+         f("targetId", QFieldType.LONG, "Page").withPossibleValueSourceName(config.applyPrefix(WebPerfSchema.TARGET)),
          f("scope", QFieldType.STRING, "Scope").withMaxLength(20),
          f("source", QFieldType.STRING, "Source").withMaxLength(10),
          f("strategy", QFieldType.STRING, "Strategy or Form Factor").withMaxLength(10),
@@ -486,7 +513,7 @@ public final class WebPerfMetaData
 
       return (table(WebPerfSchema.COMPARISON, "Before and After", "compare_arrows", fields, false, Set.of())
          .withRecordLabelFormatAndFields("%s %s", "metric", "segment")
-         .withSection(section("comparison", "Comparison", "compare_arrows", Tier.T1, "id", "changeEventId", "metric", "segment", "beforeValue",
+         .withSection(section("comparison", "Comparison", "compare_arrows", Tier.T1, "id", "changeEventId", "targetId", "metric", "segment", "beforeValue",
             "afterValue", "delta", "deltaPct"))
          .withSection(section("details", "Details", "info", Tier.T2, "scope", "source", "strategy", "beforeN", "beforeWindow", "afterN",
             "afterWindow"))
