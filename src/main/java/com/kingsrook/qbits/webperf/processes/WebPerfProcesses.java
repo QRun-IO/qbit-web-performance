@@ -37,6 +37,7 @@ import com.kingsrook.qqq.backend.core.model.metadata.permissions.PermissionLevel
 import com.kingsrook.qqq.backend.core.model.metadata.permissions.QPermissionRules;
 import com.kingsrook.qqq.backend.core.model.metadata.processes.QBackendStepMetaData;
 import com.kingsrook.qqq.backend.core.model.metadata.processes.QFunctionInputMetaData;
+import com.kingsrook.qqq.backend.core.model.metadata.processes.QFrontendStepMetaData;
 import com.kingsrook.qqq.backend.core.model.metadata.processes.QProcessMetaData;
 import com.kingsrook.qqq.backend.core.model.metadata.scheduleing.QScheduleMetaData;
 import com.kingsrook.qqq.backend.core.processes.implementations.etl.streamedwithfrontend.AbstractExtractStep;
@@ -63,6 +64,10 @@ import com.kingsrook.qqq.backend.core.processes.implementations.etl.streamedwith
  *******************************************************************************/
 public final class WebPerfProcesses
 {
+   public static final String DISMISS_REGRESSIONS = "DismissRegressions";
+   public static final String RESOLVE_REGRESSIONS = "ResolveRegressions";
+   public static final String COMPARE_CHANGE = "CompareChange";
+   public static final String PROBE_DEPLOYS = "ProbeDeploys";
    public static final String TEST_PAGE_SPEED     = "TestPageSpeed";
    public static final String RUN_SITE_AUDIT      = "RunSiteAudit";
    public static final String SYNC_TARGETS        = "SyncPages";
@@ -145,6 +150,29 @@ public final class WebPerfProcesses
       {
          processes.add(scheduled(config, SCHEDULED_FIELD, "Refresh Google field data (scheduled)", ScheduledSteps.FieldData.class,
             new QScheduleMetaData().withCronExpression(FIELD_CRON).withCronTimeZoneId("UTC")));
+      }
+      String regressions = config.applyPrefix(WebPerfSchema.REGRESSION);
+      for(String status : List.of("DISMISSED", "RESOLVED"))
+      {
+         boolean dismiss = "DISMISSED".equals(status);
+         QProcessMetaData process = etl(config, dismiss ? DISMISS_REGRESSIONS : RESOLVE_REGRESSIONS, dismiss ? "Dismiss" : "Mark resolved", "done",
+            regressions, regressions, ExtractViaQueryStep.class, RegressionSteps.Transform.class, RegressionSteps.Load.class, status, "manage", 1,
+            "Open regressions will be updated. Closed regressions will be skipped.");
+         process.withStep(0, new QFrontendStepMetaData().withName("note").withLabel("Resolution note")
+            .withFormField(new QFieldMetaData(RegressionSteps.NOTE, QFieldType.STRING).withLabel("Resolution note").withIsRequired(true).withMaxLength(2000)));
+         processes.add(process);
+      }
+      if(config.isOn(WebPerfFeature.CDN_COMPARE))
+      {
+         String changes = config.applyPrefix(WebPerfSchema.CHANGE_EVENT);
+         processes.add(etl(config, COMPARE_CHANGE, "Compare before and after", "compare", changes, config.applyPrefix(WebPerfSchema.COMPARISON),
+            ExtractViaQueryStep.class, RegressionSteps.CompareTransform.class, RegressionSteps.CompareLoad.class, null, "view", 1,
+            "Lab comparisons require three successful samples on each side, on the same Lighthouse major version."));
+      }
+      if(config.isOn(WebPerfFeature.DEPLOY_PROBES) || !config.getChangeEventSources().isEmpty())
+      {
+         processes.add(scheduled(config, PROBE_DEPLOYS, "Check site changes", ScheduledSteps.ProbeChanges.class,
+            new QScheduleMetaData().withRepeatSeconds(300).withInitialDelaySeconds(1)));
       }
       return (processes);
    }

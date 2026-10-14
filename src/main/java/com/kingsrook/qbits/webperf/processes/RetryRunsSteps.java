@@ -144,8 +144,23 @@ public final class RetryRunsSteps
          String                             batch    = java.util.UUID.randomUUID().toString();
          for(QRecord record : input.getRecords())
          {
-            requests.add(new WebPerfService.RunRequest(record.getValueLong("targetId"), record.getValueString("url"), record.getValueString("strategy"),
-               "MANUAL", "retry of run " + record.getValue("id"), batch, Instant.now()));
+            if(List.of("CONFIRM", "CHANGE_COMPARE").contains(record.getValueString("triggerType")))
+            {
+               try
+               {
+                  String status = service.retrySample(record.getValueLong("id"), Instant.now());
+                  ("QUEUED".equals(status) ? queued : "MERGED".equals(status) ? merged : capped).incrementCount(1);
+               }
+               catch(SQLException e)
+               {
+                  throw (new QException("Could not retry the measurement sample", e));
+               }
+            }
+            else
+            {
+               requests.add(new WebPerfService.RunRequest(record.getValueLong("targetId"), record.getValueString("url"), record.getValueString("strategy"),
+                  "MANUAL", "retry of run " + record.getValue("id"), batch, Instant.now()));
+            }
          }
          try
          {

@@ -23,12 +23,16 @@ package com.kingsrook.qbits.webperf;
 
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import com.kingsrook.qbits.webperf.sources.HttpBuildIdProbe;
 import com.kingsrook.qbits.webperf.sources.SitemapUrlSource;
 import com.kingsrook.qqq.backend.core.context.QContext;
 import com.kingsrook.qqq.backend.core.exceptions.QException;
 import com.kingsrook.qqq.backend.core.instances.QInstanceValidator;
 import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
+import com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldMetaData;
+import com.kingsrook.qqq.backend.core.model.metadata.possiblevalues.QPossibleValueSource;
+import com.kingsrook.qqq.backend.core.model.metadata.possiblevalues.QPossibleValueSourceType;
 import com.kingsrook.qqq.backend.core.model.metadata.audits.AuditLevel;
 import com.kingsrook.qqq.backend.core.model.metadata.layout.QAppMetaData;
 import com.kingsrook.qqq.backend.core.model.metadata.layout.QAppSection;
@@ -106,6 +110,53 @@ class WebPerfQBitProducerTest
       assertTrue(qInstance.getTable("web_performance_target").getField("enabled").getIsEditable());
       assertFalse(qInstance.getTable("web_performance_target").getField("latestMobilePerformance").getIsEditable());
       assertEquals("web_performance", qInstance.getTable("web_performance_target").getPermissionRules().getPermissionBaseName());
+   }
+
+
+
+   /*******************************************************************************
+    ** Every enum field resolves to an install-scoped ENUM with stable stored IDs.
+    *******************************************************************************/
+   @Test
+   void testEnumFields() throws Exception
+   {
+      QInstance instance = WebPerfTestSupport.newInstance();
+      new WebPerfQBitProducer().withQBitConfig(WebPerfTestSupport.config().withTableNamePrefix("perf_")).produce(instance);
+      Map<String, List<String>> expected = Map.ofEntries(
+         Map.entry("tier", List.of("KEY", "STANDARD")),
+         Map.entry("target_source", List.of("SITEMAP", "MANUAL", "CONTENT")),
+         Map.entry("strategy", List.of("MOBILE", "DESKTOP")),
+         Map.entry("strategy_or_form_factor", List.of("MOBILE", "DESKTOP", "PHONE", "TABLET", "ALL")),
+         Map.entry("field_source", List.of("CRUX_API", "CRUX_HISTORY", "PSI")),
+         Map.entry("field_scope", List.of("URL", "ORIGIN")),
+         Map.entry("budget_scope", List.of("SITE", "TIER", "TARGET", "CONTENT_TABLE", "PATH_PREFIX")),
+         Map.entry("measurement_source", List.of("LAB", "RUM", "CRUX")),
+         Map.entry("comparison_source", List.of("LAB", "RUM")),
+         Map.entry("comparison_scope", List.of("KEY", "TARGET", "SITE")),
+         Map.entry("change_source", List.of("PROBE", "WEBHOOK", "QBIT_CDN", "USER")),
+         Map.entry("metric", List.of("LCP", "INP", "CLS", "FCP", "TTFB", "TBT", "PERFORMANCE_SCORE", "ACCESSIBILITY_SCORE", "BEST_PRACTICES_SCORE", "SEO_SCORE")),
+         Map.entry("comparator", List.of("<=", ">=")),
+         Map.entry("severity", List.of("WARNING", "CRITICAL")));
+      int count = 0;
+      for(QTableMetaData table : instance.getTables().values())
+      {
+         for(QFieldMetaData field : table.getFields().values())
+         {
+            if(List.of("tier", "scope", "source", "strategy", "metric", "comparator", "severity").contains(field.getName()))
+            {
+               count++;
+               assertThat(field.getPossibleValueSourceName()).as(table.getName() + "." + field.getName()).startsWith("perf_");
+               QPossibleValueSource source = instance.getPossibleValueSource(field.getPossibleValueSourceName());
+               assertEquals(QPossibleValueSourceType.ENUM, source.getType());
+               assertThat(source.getEnumValues()).extracting(v -> (String) v.getId()).containsExactlyElementsOf(expected.get(source.getName().substring(5)));
+               assertThat(source.getEnumValues()).allMatch(v -> v.getLabel() != null && !v.getLabel().isBlank());
+            }
+         }
+      }
+      assertEquals(21, count);
+      assertEquals("Key page", instance.getPossibleValueSource("perf_tier").getEnumValues().get(0).getLabel());
+      assertTrue(instance.getTable("perf_target").getField("url").getIsEditable());
+      assertTrue(instance.getTable("perf_target").isCapabilityEnabled(instance.getBackend(WebPerfTestSupport.BACKEND), Capability.TABLE_INSERT));
    }
 
 

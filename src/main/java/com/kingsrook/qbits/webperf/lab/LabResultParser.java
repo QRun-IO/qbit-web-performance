@@ -140,6 +140,53 @@ public final class LabResultParser
 
 
    /*******************************************************************************
+    ** Read a reported TTFB subpart from Lighthouse's LCP insight, never savings.
+    *******************************************************************************/
+   public static Integer ttfb(String json)
+   {
+      JSONObject root = new JSONObject(json);
+      JSONObject lhr = root.optJSONObject("lighthouseResult");
+      JSONObject audits = (lhr == null ? root : lhr).optJSONObject("audits");
+      if(audits == null)
+      {
+         return (null);
+      }
+      for(String name : List.of("lcp-phases-insight", "lcp-breakdown-insight"))
+      {
+         JSONObject audit = audits.optJSONObject(name);
+         JSONObject details = audit == null ? null : audit.optJSONObject("details");
+         JSONArray items = details == null ? null : details.optJSONArray("items");
+         if(items != null)
+         {
+            for(int i = 0; i < items.length(); i++)
+            {
+               JSONObject item = items.optJSONObject(i);
+               if(item == null)
+               {
+                  continue;
+               }
+               JSONArray subparts = item.optJSONArray("items");
+               if(subparts == null)
+               {
+                  subparts = new JSONArray().put(item);
+               }
+               for(int j = 0; j < subparts.length(); j++)
+               {
+                  JSONObject part = subparts.optJSONObject(j);
+                  if(part != null && "timeToFirstByte".equals(part.optString("subpart")) && part.opt("duration") instanceof Number duration)
+                  {
+                     return ((int) Math.round(duration.doubleValue()));
+                  }
+               }
+            }
+         }
+      }
+      return (null);
+   }
+
+
+
+   /*******************************************************************************
     ** Parser only.
     *******************************************************************************/
    private LabResultParser()

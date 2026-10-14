@@ -261,3 +261,22 @@ SELECT name, scope, scope_value, source, strategy, metric, comparator, threshold
    UNION ALL SELECT 'Performance at least 50 (KEY pages)', 'TIER', 'KEY', 'LAB', NULL, 'PERFORMANCE_SCORE', '>=', 50, 'CRITICAL'
 ) seeds
 WHERE NOT EXISTS (SELECT 1 FROM ${web_performance.tablePrefix}budget WHERE seeded = TRUE);
+
+
+-- changeset qbit-web-performance:11
+-- comment: Durable evaluation progress, event identity and comparison page identity. Existing history is preserved.
+ALTER TABLE ${web_performance.tablePrefix}lab_run ADD COLUMN evaluated_at TIMESTAMP WITHOUT TIME ZONE;
+ALTER TABLE ${web_performance.tablePrefix}lab_run ADD COLUMN change_event_id BIGINT;
+ALTER TABLE ${web_performance.tablePrefix}regression ADD COLUMN first_run_id BIGINT;
+ALTER TABLE ${web_performance.tablePrefix}regression ADD COLUMN checkpoint_run_id BIGINT;
+ALTER TABLE ${web_performance.tablePrefix}regression ADD COLUMN lighthouse_major VARCHAR(20);
+ALTER TABLE ${web_performance.tablePrefix}change_event ADD COLUMN event_key VARCHAR(64);
+ALTER TABLE ${web_performance.tablePrefix}change_event ADD COLUMN site_key VARCHAR(200);
+ALTER TABLE ${web_performance.tablePrefix}comparison ADD COLUMN target_id BIGINT;
+CREATE UNIQUE INDEX uq_${web_performance.tablePrefix}change_event_key ON ${web_performance.tablePrefix}change_event (event_key);
+CREATE UNIQUE INDEX uq_${web_performance.tablePrefix}comparison_page ON ${web_performance.tablePrefix}comparison (change_event_id, target_id, source, strategy, metric, segment);
+CREATE INDEX idx_${web_performance.tablePrefix}lab_evaluation ON ${web_performance.tablePrefix}lab_run (evaluated_at, status, id);
+ALTER TABLE ${web_performance.tablePrefix}regression ADD COLUMN failed_audits VARCHAR(2000);
+ALTER TABLE ${web_performance.tablePrefix}lab_run ADD COLUMN ttfb_ms INTEGER;
+ALTER TABLE ${web_performance.tablePrefix}field_snapshot ADD COLUMN evaluated_at TIMESTAMP WITHOUT TIME ZONE;
+ALTER TABLE ${web_performance.tablePrefix}change_event ADD COLUMN last_seen_at TIMESTAMP WITHOUT TIME ZONE;

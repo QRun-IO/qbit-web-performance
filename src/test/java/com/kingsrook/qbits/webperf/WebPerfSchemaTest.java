@@ -31,6 +31,9 @@ import java.util.Locale;
 import java.util.Set;
 import com.kingsrook.qqq.backend.core.actions.tables.InsertAction;
 import com.kingsrook.qqq.backend.core.actions.tables.QueryAction;
+import com.kingsrook.qqq.backend.core.actions.tables.UpdateAction;
+import com.kingsrook.qqq.backend.core.model.actions.tables.update.UpdateInput;
+import com.kingsrook.qqq.backend.core.model.actions.tables.update.UpdateOutput;
 import com.kingsrook.qqq.backend.core.context.QContext;
 import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertInput;
 import com.kingsrook.qqq.backend.core.model.actions.tables.insert.InsertOutput;
@@ -41,6 +44,7 @@ import com.kingsrook.qqq.backend.core.model.data.QRecord;
 import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
 import com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldMetaData;
 import com.kingsrook.qqq.backend.core.model.metadata.tables.QTableMetaData;
+import com.kingsrook.qqq.backend.core.model.metadata.possiblevalues.QPossibleValueSource;
 import com.kingsrook.qqq.backend.module.rdbms.jdbc.ConnectionManager;
 import com.kingsrook.qqq.backend.module.rdbms.model.metadata.RDBMSBackendMetaData;
 import org.junit.jupiter.api.AfterEach;
@@ -130,6 +134,18 @@ class WebPerfSchemaTest
       assertEquals(13, budgets.size());
       assertThat(budgets).allMatch(r -> Boolean.TRUE.equals(r.getValueBoolean("seeded")) && Boolean.TRUE.equals(r.getValueBoolean("enabled")));
 
+      for(QRecord budget : budgets)
+      {
+         for(String field : List.of("scope", "source", "strategy", "metric", "comparator", "severity"))
+         {
+            if(budget.getValue(field) != null)
+            {
+               QPossibleValueSource source = qInstance.getPossibleValueSource(qInstance.getTable("web_performance_budget").getField(field).getPossibleValueSourceName());
+               assertThat(source.getEnumValues()).extracting(v -> (String) v.getId()).contains(budget.getValueString(field));
+            }
+         }
+      }
+
       QRecord inp = budgets.stream().filter(r -> "INP good (real users, p75)".equals(r.getValueString("name"))).findFirst().orElseThrow();
       assertEquals("RUM", inp.getValueString("source"));
       assertEquals(0, new BigDecimal("200").compareTo(inp.getValueBigDecimal("threshold")));
@@ -151,16 +167,68 @@ class WebPerfSchemaTest
    {
       installed("perf_");
       InsertOutput output = new InsertAction().execute(new InsertInput("perf_target").withRecords(List.of(
-         new QRecord().withValue("siteKey", "site:1").withValue("url", "https://www.example.com/about").withValue("path", "/about")
-            .withValue("source", "MANUAL").withValue("tier", "KEY").withValue("enabled", true))));
+         new QRecord().withValue("url", "https://www.example.com/about").withValue("label", "About")
+            .withValue("tier", "KEY").withValue("enabled", true))));
       assertThat(output.getRecords().get(0).getErrors()).isEmpty();
 
       QRecord stored = new QueryAction().execute(new QueryInput("perf_target").withFilter(new QQueryFilter())).getRecords().get(0);
       assertEquals("https://www.example.com/about", stored.getValueString("url"));
       assertEquals("KEY", stored.getValueString("tier"));
+      assertEquals("host:www.example.com", stored.getValueString("siteKey"));
+      assertEquals("/about", stored.getValueString("path"));
+      assertEquals("MANUAL", stored.getValueString("source"));
+      assertEquals(false, stored.getValueBoolean("inSitemap"));
 
       InsertOutput duplicate = new InsertAction().execute(new InsertInput("perf_target").withRecords(List.of(
          new QRecord().withValue("siteKey", "site:1").withValue("url", "https://www.example.com/about"))));
       assertThat(duplicate.getRecords().get(0).getErrors()).isNotEmpty();
    }
+
+
+
+   /*******************************************************************************
+    ** Invalid manual URLs return a clear error and never become tested pages.
+    *******************************************************************************/
+   @Test
+   void testManualPageUrlValidation() throws Exception
+   {
+      installed("perf_");
+      for(String url : List.of("", "/about", "http://www.example.com/about", "https:///about", "https://user:pass@example.com/", "https://www.example.com/#section", "not a URL"))
+      {
+         InsertOutput output = new InsertAction().execute(new InsertInput("perf_target").withRecords(List.of(new QRecord().withValue("url", url))));
+         assertThat(output.getRecords().get(0).getErrors()).isNotEmpty();
+         assertThat(output.getRecords().get(0).getErrors().toString()).contains("absolute HTTPS URL");
+      }
+      assertThat(new QueryAction().execute(new QueryInput("perf_target").withFilter(new QQueryFilter())).getRecords()).isEmpty();
+   }
+
+
+
+
+   /*******************************************************************************
+    ** Editing a URL refreshes its path; invalid edits leave the stored URL intact.
+    *******************************************************************************/
+   @Test
+   void testManualPageUrlUpdates() throws Exception
+   {
+      installed("perf_");
+      QRecord inserted = new InsertAction().execute(new InsertInput("perf_target").withRecords(List.of(
+         new QRecord().withValue("url", "https://www.example.com")))).getRecords().get(0);
+      assertThat(inserted.getErrors()).isEmpty();
+      assertEquals("/", inserted.getValueString("path"));
+      UpdateOutput valid = new UpdateAction().execute(new UpdateInput("perf_target").withRecords(List.of(
+         new QRecord().withValue("id", inserted.getValue("id")).withValue("url", "https://www.example.com/new"))));
+      assertThat(valid.getRecords().get(0).getErrors()).isEmpty();
+      UpdateOutput invalid = new UpdateAction().execute(new UpdateInput("perf_target").withRecords(List.of(
+         new QRecord().withValue("id", inserted.getValue("id")).withValue("url", "/bad"))));
+      assertThat(invalid.getRecords().get(0).getErrors()).isNotEmpty();
+      UpdateOutput labelOnly = new UpdateAction().execute(new UpdateInput("perf_target").withRecords(List.of(
+         new QRecord().withValue("id", inserted.getValue("id")).withValue("label", "New page"))));
+      assertThat(labelOnly.getRecords().get(0).getErrors()).isEmpty();
+      QRecord stored = new QueryAction().execute(new QueryInput("perf_target").withFilter(new QQueryFilter())).getRecords().get(0);
+      assertEquals("https://www.example.com/new", stored.getValueString("url"));
+      assertEquals("/new", stored.getValueString("path"));
+      assertEquals("New page", stored.getValueString("label"));
+   }
+
 }
