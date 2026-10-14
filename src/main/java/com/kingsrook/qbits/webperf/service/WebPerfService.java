@@ -76,6 +76,9 @@ public class WebPerfService
    /** Statuses that still hold a place in the queue (a new request merges into them). */
    public static final List<String> OPEN_STATUSES = List.of("QUEUED", "RUNNING");
 
+   static final int REPORT_BATCH       = 500;
+   static final int REPORT_MAX_BATCHES = 20;
+
    private final WebPerfRuntime    runtime;
    private final WebPerfStore      store;
    private final WebPerfQBitConfig config;
@@ -609,6 +612,45 @@ public class WebPerfService
 
 
    /*******************************************************************************
+    ** Apply reportRetentionDays: delete Lighthouse Reports older than that many
+    ** days (0 keeps them forever). The run, its scores and findings stay; only
+    ** the full compressed response goes. Runs after a result is committed (a
+    ** failure here never loses a run's evidence), at most once an hour per
+    ** process (WebPerfRuntime.reportPruneDue, shared by the workers), in batches
+    ** of REPORT_BATCH rows, at most REPORT_MAX_BATCHES per pass. There is no
+    ** table for state shared across replicas, so each replica keeps its own
+    ** hourly limit; passes are bounded and idempotent, so overlapping replicas
+    ** only repeat one cheap query.
+    *******************************************************************************/
+   void pruneReports()
+   {
+      int days = runtime.getConfig().getReportRetentionDays();
+      if(days <= 0 || !runtime.reportPruneDue())
+      {
+         return;
+      }
+
+      try
+      {
+         java.sql.Timestamp cutoff = WebPerfStore.utc(Instant.now().minus(java.time.Duration.ofDays(days)));
+         for(int batch = 0; batch < REPORT_MAX_BATCHES; batch++)
+         {
+            int deleted = store.update("DELETE FROM {lab_report} WHERE id IN (SELECT id FROM {lab_report} WHERE create_date < ? ORDER BY id FETCH FIRST " + REPORT_BATCH + " ROWS ONLY)", cutoff);
+            if(deleted < REPORT_BATCH)
+            {
+               return;
+            }
+         }
+      }
+      catch(SQLException | RuntimeException e)
+      {
+         LOG.warn("Could not prune old Lighthouse Reports", e);
+      }
+   }
+
+
+
+   /*******************************************************************************
     ** Store a successful response: the run's scores and metrics, its findings,
     ** the compressed report, and the page's latest results.
     *******************************************************************************/
@@ -619,6 +661,7 @@ public class WebPerfService
          new WebPerfService(runtime, tx).storeResult(runId, run, attempts, parsed, response);
          return (null);
       });
+      pruneReports();
    }
 
 
