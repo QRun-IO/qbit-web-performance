@@ -31,6 +31,7 @@ import com.kingsrook.qbits.webperf.WebPerfRuntime;
 import com.kingsrook.qbits.webperf.WebPerfSchema;
 import com.kingsrook.qbits.webperf.processes.WebPerfProcesses;
 import com.kingsrook.qbits.webperf.widgets.WebPerfWidgets;
+import com.kingsrook.qqq.backend.core.actions.customizers.TableCustomizers;
 import com.kingsrook.qqq.backend.core.actions.dashboard.widgets.AbstractWidgetRenderer;
 import com.kingsrook.qqq.backend.core.model.dashboard.widgets.WidgetType;
 import com.kingsrook.qqq.backend.core.model.metadata.code.QCodeReference;
@@ -47,7 +48,9 @@ import com.kingsrook.qqq.backend.core.model.metadata.layout.QAppSection;
 import com.kingsrook.qqq.backend.core.model.metadata.layout.QIcon;
 import com.kingsrook.qqq.backend.core.model.metadata.permissions.PermissionLevel;
 import com.kingsrook.qqq.backend.core.model.metadata.permissions.QPermissionRules;
+import com.kingsrook.qqq.backend.core.model.metadata.possiblevalues.QPossibleValue;
 import com.kingsrook.qqq.backend.core.model.metadata.possiblevalues.QPossibleValueSource;
+import com.kingsrook.qqq.backend.core.model.metadata.possiblevalues.QPossibleValueSourceType;
 import com.kingsrook.qqq.backend.core.model.metadata.tables.Capability;
 import com.kingsrook.qqq.backend.core.model.metadata.tables.QFieldSection;
 import com.kingsrook.qqq.backend.core.model.metadata.tables.QTableMetaData;
@@ -65,7 +68,7 @@ import com.kingsrook.qqq.backend.module.rdbms.model.metadata.RDBMSTableBackendDe
  **   comparisons, change events) are written only by the QBit's processes:
  **   read-only in the UI and not audited.
  ** - Tested pages and budgets are edited by people (enable a page, change a
- **   budget): only those fields are editable, and both are field-audited.
+ **   budget): URLs are validated on insert/edit, and both are field-audited.
  **   Regressions change status only through record actions (dismiss,
  **   resolve), so they are read-only in the UI but field-audited.
  **
@@ -106,6 +109,7 @@ public final class WebPerfMetaData
       {
          qInstance.addPossibleValueSource(QPossibleValueSource.newForTable(config.applyPrefix(base)));
       }
+      addEnumSources(qInstance);
       for(QProcessMetaData process : WebPerfProcesses.define(config, qInstance))
       {
          qInstance.addProcess(process);
@@ -132,6 +136,88 @@ public final class WebPerfMetaData
       {
          qInstance.getApp(config.getParentAppName()).withChild(qInstance.getApp(config.getAppName()));
       }
+   }
+
+
+
+   /*******************************************************************************
+    ** Enumerated values retain the stored IDs used by runners and seeded budgets.
+    *******************************************************************************/
+   private void addEnumSources(QInstance qInstance)
+   {
+      addEnumSource(qInstance, "tier",
+         new QPossibleValue<>("KEY", "Key page"),
+         new QPossibleValue<>("STANDARD", "Standard page"));
+      addEnumSource(qInstance, "target_source",
+         new QPossibleValue<>("SITEMAP", "Sitemap"),
+         new QPossibleValue<>("MANUAL", "Manual"),
+         new QPossibleValue<>("CONTENT", "Content"));
+      addEnumSource(qInstance, "strategy",
+         new QPossibleValue<>("MOBILE", "Mobile"),
+         new QPossibleValue<>("DESKTOP", "Desktop"));
+      addEnumSource(qInstance, "strategy_or_form_factor",
+         new QPossibleValue<>("MOBILE", "Mobile"),
+         new QPossibleValue<>("DESKTOP", "Desktop"),
+         new QPossibleValue<>("PHONE", "Phone"),
+         new QPossibleValue<>("TABLET", "Tablet"),
+         new QPossibleValue<>("ALL", "All devices"));
+      addEnumSource(qInstance, "field_source",
+         new QPossibleValue<>("CRUX_API", "CrUX API"),
+         new QPossibleValue<>("CRUX_HISTORY", "CrUX history"),
+         new QPossibleValue<>("PSI", "PageSpeed Insights"));
+      addEnumSource(qInstance, "field_scope",
+         new QPossibleValue<>("URL", "URL"),
+         new QPossibleValue<>("ORIGIN", "Origin"));
+      addEnumSource(qInstance, "budget_scope",
+         new QPossibleValue<>("SITE", "Site"),
+         new QPossibleValue<>("TIER", "Tier"),
+         new QPossibleValue<>("TARGET", "Page"),
+         new QPossibleValue<>("CONTENT_TABLE", "Content table"),
+         new QPossibleValue<>("PATH_PREFIX", "Path prefix"));
+      addEnumSource(qInstance, "measurement_source",
+         new QPossibleValue<>("LAB", "Lab"),
+         new QPossibleValue<>("RUM", "Real users"),
+         new QPossibleValue<>("CRUX", "Google field data"));
+      addEnumSource(qInstance, "comparison_source",
+         new QPossibleValue<>("LAB", "Lab"),
+         new QPossibleValue<>("RUM", "Real users"));
+      addEnumSource(qInstance, "comparison_scope",
+         new QPossibleValue<>("KEY", "Key pages"),
+         new QPossibleValue<>("TARGET", "Page"),
+         new QPossibleValue<>("SITE", "Site"));
+      addEnumSource(qInstance, "change_source",
+         new QPossibleValue<>("PROBE", "Probe"),
+         new QPossibleValue<>("WEBHOOK", "Webhook"),
+         new QPossibleValue<>("QBIT_CDN", "CDN"),
+         new QPossibleValue<>("USER", "User"));
+      addEnumSource(qInstance, "metric",
+         new QPossibleValue<>("LCP", "LCP"),
+         new QPossibleValue<>("INP", "INP"),
+         new QPossibleValue<>("CLS", "CLS"),
+         new QPossibleValue<>("FCP", "FCP"),
+         new QPossibleValue<>("TTFB", "TTFB"),
+         new QPossibleValue<>("TBT", "TBT"),
+         new QPossibleValue<>("PERFORMANCE_SCORE", "Performance score"),
+         new QPossibleValue<>("ACCESSIBILITY_SCORE", "Accessibility score"),
+         new QPossibleValue<>("BEST_PRACTICES_SCORE", "Best practices score"),
+         new QPossibleValue<>("SEO_SCORE", "SEO score"));
+      addEnumSource(qInstance, "comparator",
+         new QPossibleValue<>("<=", "At most"),
+         new QPossibleValue<>(">=", "At least"));
+      addEnumSource(qInstance, "severity",
+         new QPossibleValue<>("WARNING", "Warning"),
+         new QPossibleValue<>("CRITICAL", "Critical"));
+   }
+
+
+
+   /*******************************************************************************
+    ** Register an install-scoped dropdown with plain labels.
+    *******************************************************************************/
+   private void addEnumSource(QInstance qInstance, String name, QPossibleValue<?>... values)
+   {
+      qInstance.addPossibleValueSource(new QPossibleValueSource().withName(config.applyPrefix(name))
+         .withType(QPossibleValueSourceType.ENUM).withEnumValues(List.of(values)));
    }
 
 
@@ -211,11 +297,11 @@ public final class WebPerfMetaData
          f("siteKey", QFieldType.STRING, "Site").withMaxLength(100),
          f("url", QFieldType.STRING, "URL").withMaxLength(1000).withIsRequired(true),
          f("path", QFieldType.STRING, "Path").withMaxLength(500),
-         f("source", QFieldType.STRING, "Source").withMaxLength(20),
+         f("source", QFieldType.STRING, "Source").withPossibleValueSourceName(config.applyPrefix("target_source")).withMaxLength(20),
          f("contentTable", QFieldType.STRING, "Content Table").withMaxLength(100),
          f("contentId", QFieldType.LONG, "Content Id"),
          f("label", QFieldType.STRING, "Label").withMaxLength(200),
-         f("tier", QFieldType.STRING, "Tier").withMaxLength(20).withDefaultValue("STANDARD"),
+         f("tier", QFieldType.STRING, "Tier").withPossibleValueSourceName(config.applyPrefix("tier")).withMaxLength(20).withDefaultValue("STANDARD"),
          f("enabled", QFieldType.BOOLEAN, "Enabled").withDefaultValue(true),
          f("inSitemap", QFieldType.BOOLEAN, "In Sitemap"),
          f("lastSeenInSitemapAt", QFieldType.DATE_TIME, "Last Seen in Sitemap"),
@@ -226,7 +312,9 @@ public final class WebPerfMetaData
          f("openRegressionCount", QFieldType.INTEGER, "Open Regressions")));
 
       QTableMetaData table = table(WebPerfSchema.TARGET, "Tested Pages", "travel_explore", fields, true,
-         Set.of("label", "tier", "enabled"))
+         Set.of("url", "label", "tier", "enabled"))
+         .withCustomizer(TableCustomizers.PRE_INSERT_RECORD, new QCodeReference(TargetCustomizer.class))
+         .withCustomizer(TableCustomizers.PRE_UPDATE_RECORD, new QCodeReference(TargetCustomizer.class))
          .withRecordLabelFormatAndFields("%s", "url")
          .withUniqueKey(new UniqueKey("siteKey", "url"))
          .withSection(section("page", "Page", "travel_explore", Tier.T1, "id", "url", "label", "tier", "enabled"))
@@ -249,7 +337,7 @@ public final class WebPerfMetaData
          f("targetId", QFieldType.LONG, "Page").withPossibleValueSourceName(config.applyPrefix(WebPerfSchema.TARGET)),
          f("url", QFieldType.STRING, "URL").withMaxLength(1000),
          f("finalUrl", QFieldType.STRING, "Final URL").withMaxLength(1000),
-         f("strategy", QFieldType.STRING, "Strategy").withMaxLength(10),
+         f("strategy", QFieldType.STRING, "Strategy").withPossibleValueSourceName(config.applyPrefix("strategy")).withMaxLength(10),
          f("runner", QFieldType.STRING, "Runner").withMaxLength(20),
          f("triggerType", QFieldType.STRING, "Trigger").withMaxLength(20),
          f("triggerRef", QFieldType.STRING, "Trigger Reference").withMaxLength(200),
@@ -300,7 +388,7 @@ public final class WebPerfMetaData
       List<QFieldMetaData> fields = withCommon(List.of(
          f("runId", QFieldType.LONG, "Run").withPossibleValueSourceName(config.applyPrefix(WebPerfSchema.LAB_RUN)),
          f("targetId", QFieldType.LONG, "Page").withPossibleValueSourceName(config.applyPrefix(WebPerfSchema.TARGET)),
-         f("strategy", QFieldType.STRING, "Strategy").withMaxLength(10),
+         f("strategy", QFieldType.STRING, "Strategy").withPossibleValueSourceName(config.applyPrefix("strategy")).withMaxLength(10),
          f("category", QFieldType.STRING, "Category").withMaxLength(20),
          f("auditId", QFieldType.STRING, "Audit").withMaxLength(100),
          f("lighthouseVersion", QFieldType.STRING, "Lighthouse Version").withMaxLength(20),
@@ -350,8 +438,8 @@ public final class WebPerfMetaData
    QTableMetaData fieldSnapshot()
    {
       List<QFieldMetaData> fields = withCommon(List.of(
-         f("source", QFieldType.STRING, "Source").withMaxLength(20),
-         f("scope", QFieldType.STRING, "Scope").withMaxLength(10),
+         f("source", QFieldType.STRING, "Source").withPossibleValueSourceName(config.applyPrefix("field_source")).withMaxLength(20),
+         f("scope", QFieldType.STRING, "Scope").withPossibleValueSourceName(config.applyPrefix("field_scope")).withMaxLength(10),
          f("scopeKey", QFieldType.STRING, "URL or Origin").withMaxLength(1000),
          f("formFactor", QFieldType.STRING, "Form Factor").withMaxLength(10),
          f("status", QFieldType.STRING, "Status").withMaxLength(10),
@@ -382,14 +470,14 @@ public final class WebPerfMetaData
    {
       List<QFieldMetaData> fields = withCommon(List.of(
          f("name", QFieldType.STRING, "Name").withMaxLength(200).withIsRequired(true),
-         f("scope", QFieldType.STRING, "Scope").withMaxLength(20),
+         f("scope", QFieldType.STRING, "Scope").withPossibleValueSourceName(config.applyPrefix("budget_scope")).withMaxLength(20),
          f("scopeValue", QFieldType.STRING, "Scope Value").withMaxLength(500),
-         f("source", QFieldType.STRING, "Source").withMaxLength(10),
-         f("strategy", QFieldType.STRING, "Strategy").withMaxLength(10),
-         f("metric", QFieldType.STRING, "Metric").withMaxLength(30),
-         f("comparator", QFieldType.STRING, "Comparator").withMaxLength(5),
+         f("source", QFieldType.STRING, "Source").withPossibleValueSourceName(config.applyPrefix("measurement_source")).withMaxLength(10),
+         f("strategy", QFieldType.STRING, "Strategy").withPossibleValueSourceName(config.applyPrefix("strategy")).withMaxLength(10),
+         f("metric", QFieldType.STRING, "Metric").withPossibleValueSourceName(config.applyPrefix("metric")).withMaxLength(30),
+         f("comparator", QFieldType.STRING, "Comparator").withPossibleValueSourceName(config.applyPrefix("comparator")).withMaxLength(5),
          f("threshold", QFieldType.DECIMAL, "Threshold"),
-         f("severity", QFieldType.STRING, "Severity").withMaxLength(10),
+         f("severity", QFieldType.STRING, "Severity").withPossibleValueSourceName(config.applyPrefix("severity")).withMaxLength(10),
          f("enabled", QFieldType.BOOLEAN, "Enabled"),
          f("seeded", QFieldType.BOOLEAN, "Seeded")));
 
@@ -412,16 +500,16 @@ public final class WebPerfMetaData
          f("targetId", QFieldType.LONG, "Page").withPossibleValueSourceName(config.applyPrefix(WebPerfSchema.TARGET)),
          f("contentTable", QFieldType.STRING, "Content Table").withMaxLength(100),
          f("contentId", QFieldType.LONG, "Content Id"),
-         f("source", QFieldType.STRING, "Source").withMaxLength(10),
-         f("strategy", QFieldType.STRING, "Strategy or Form Factor").withMaxLength(10),
-         f("metric", QFieldType.STRING, "Metric").withMaxLength(30),
+         f("source", QFieldType.STRING, "Source").withPossibleValueSourceName(config.applyPrefix("measurement_source")).withMaxLength(10),
+         f("strategy", QFieldType.STRING, "Strategy or Form Factor").withPossibleValueSourceName(config.applyPrefix("strategy_or_form_factor")).withMaxLength(10),
+         f("metric", QFieldType.STRING, "Metric").withPossibleValueSourceName(config.applyPrefix("metric")).withMaxLength(30),
          f("baselineValue", QFieldType.DECIMAL, "Baseline"),
          f("baselineRef", QFieldType.STRING, "Baseline From").withMaxLength(500),
          f("currentValue", QFieldType.DECIMAL, "Current"),
          f("currentRef", QFieldType.STRING, "Current From").withMaxLength(500),
          f("delta", QFieldType.DECIMAL, "Change"),
          f("budgetId", QFieldType.LONG, "Budget").withPossibleValueSourceName(config.applyPrefix(WebPerfSchema.BUDGET)),
-         f("severity", QFieldType.STRING, "Severity").withMaxLength(10),
+         f("severity", QFieldType.STRING, "Severity").withPossibleValueSourceName(config.applyPrefix("severity")).withMaxLength(10),
          f("status", QFieldType.STRING, "Status").withMaxLength(20),
          f("causeChangeEventId", QFieldType.LONG, "Likely Cause").withPossibleValueSourceName(config.applyPrefix(WebPerfSchema.CHANGE_EVENT)),
          f("detectedAt", QFieldType.DATE_TIME, "Detected"),
@@ -451,7 +539,7 @@ public final class WebPerfMetaData
          f("fromValue", QFieldType.STRING, "From").withMaxLength(200),
          f("toValue", QFieldType.STRING, "To").withMaxLength(200),
          f("observedAt", QFieldType.DATE_TIME, "Observed"),
-         f("source", QFieldType.STRING, "Source").withMaxLength(20),
+         f("source", QFieldType.STRING, "Source").withPossibleValueSourceName(config.applyPrefix("change_source")).withMaxLength(20),
          f("note", QFieldType.STRING, "Note").withMaxLength(2000)));
 
       return (table(WebPerfSchema.CHANGE_EVENT, "Site Changes", "change_circle", fields, false, Set.of())
@@ -470,10 +558,10 @@ public final class WebPerfMetaData
    {
       List<QFieldMetaData> fields = withCommon(List.of(
          f("changeEventId", QFieldType.LONG, "Change").withPossibleValueSourceName(config.applyPrefix(WebPerfSchema.CHANGE_EVENT)),
-         f("scope", QFieldType.STRING, "Scope").withMaxLength(20),
-         f("source", QFieldType.STRING, "Source").withMaxLength(10),
-         f("strategy", QFieldType.STRING, "Strategy or Form Factor").withMaxLength(10),
-         f("metric", QFieldType.STRING, "Metric").withMaxLength(30),
+         f("scope", QFieldType.STRING, "Scope").withPossibleValueSourceName(config.applyPrefix("comparison_scope")).withMaxLength(20),
+         f("source", QFieldType.STRING, "Source").withPossibleValueSourceName(config.applyPrefix("comparison_source")).withMaxLength(10),
+         f("strategy", QFieldType.STRING, "Strategy or Form Factor").withPossibleValueSourceName(config.applyPrefix("strategy_or_form_factor")).withMaxLength(10),
+         f("metric", QFieldType.STRING, "Metric").withPossibleValueSourceName(config.applyPrefix("metric")).withMaxLength(30),
          f("segment", QFieldType.STRING, "Segment").withMaxLength(100),
          f("beforeValue", QFieldType.DECIMAL, "Before"),
          f("beforeN", QFieldType.INTEGER, "Before n"),
