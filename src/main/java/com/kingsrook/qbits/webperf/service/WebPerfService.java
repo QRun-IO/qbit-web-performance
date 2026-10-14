@@ -205,7 +205,6 @@ public class WebPerfService
          values.put("enabled", true);
          values.put("in_sitemap", true);
          values.put("last_seen_in_sitemap_at", now);
-         values.put("open_regression_count", 0);
          store.insert(WebPerfSchema.TARGET, values);
       }
       for(Long id : plan.seenIds())
@@ -303,10 +302,6 @@ public class WebPerfService
    public QueuePlan planQueue(List<RunRequest> requests, Instant now) throws SQLException
    {
       Set<String> open = new HashSet<>();
-      for(Map<String, Object> row : store.query("SELECT target_id, strategy FROM {lab_run} WHERE status IN ('QUEUED', 'RUNNING')"))
-      {
-         open.add(row.get("target_id") + "|" + row.get("strategy"));
-      }
       int runsToday = runsSince(startOfToday(now));
 
       List<RunRequest> queue     = new ArrayList<>();
@@ -315,7 +310,8 @@ public class WebPerfService
       for(RunRequest request : requests)
       {
          String key = request.targetId() + "|" + request.strategy();
-         if(!open.add(key))
+         if(!open.add(key) || !store.query("SELECT id FROM {lab_run} WHERE target_id = ? AND strategy = ? AND status IN ('QUEUED', 'RUNNING') FETCH FIRST 1 ROWS ONLY",
+            request.targetId(), request.strategy()).isEmpty())
          {
             merged.add(request);
          }
@@ -355,6 +351,48 @@ public class WebPerfService
             "Today's run cap (" + config.getMaxRunsPerDay() + ") was reached; use Retry to queue it again"));
       }
       return (plan);
+   }
+
+
+
+   /*******************************************************************************
+    ** Queue an independent confirmation or comparison sample. Its reference is
+    ** stable across retries; deliberate samples must not merge with each other.
+    *******************************************************************************/
+   public String enqueueSample(Map<String, Object> target, String strategy, String trigger, String reference, Instant due) throws SQLException
+   {
+      if(!store.query("SELECT id FROM {lab_run} WHERE target_id = ? AND strategy = ? AND trigger_ref = ? AND status NOT IN ('FAILED', 'RUNTIME_ERROR', 'SKIPPED_QUOTA') FETCH FIRST 1 ROWS ONLY",
+         target.get("id"), strategy, reference).isEmpty())
+      {
+         return ("MERGED");
+      }
+      Instant now = Instant.now();
+      boolean capped = runsSince(startOfToday(now)) >= config.getMaxRunsPerDay();
+      RunRequest request = new RunRequest(WebPerfStore.asLong(target.get("id")), (String) target.get("url"), strategy, trigger, reference, null, due);
+      store.insert(WebPerfSchema.LAB_RUN, runValues(request, capped ? "SKIPPED_QUOTA" : "QUEUED", now,
+         capped ? "Daily run cap reached; use Retry to collect this sample" : null));
+      return (capped ? "SKIPPED_QUOTA" : "QUEUED");
+   }
+
+
+
+   /*******************************************************************************
+    ** Retry a deliberate sample without losing its confirmation/comparison slot.
+    ** Keep the failed row as history; simultaneous retries share the target lock.
+    *******************************************************************************/
+   public String retrySample(long runId, Instant now) throws SQLException
+   {
+      return (store.transaction(tx ->
+      {
+         Map<String, Object> run = tx.query("SELECT * FROM {lab_run} WHERE id = ?", runId).get(0);
+         Map<String, Object> target = tx.query("SELECT id, url FROM {target} WHERE id = ? FOR UPDATE", run.get("target_id")).get(0);
+         if(!List.of("FAILED", "RUNTIME_ERROR", "SKIPPED_QUOTA").contains(run.get("status")))
+         {
+            return ("MERGED");
+         }
+         return (new WebPerfService(runtime, tx).enqueueSample(target, (String) run.get("strategy"), (String) run.get("trigger_type"),
+            (String) run.get("trigger_ref"), now));
+      }));
    }
 
 
@@ -460,6 +498,7 @@ public class WebPerfService
     *******************************************************************************/
    public int runDue(Instant now) throws Exception
    {
+      new WebPerfEvaluationService(store).evaluatePending();
       LabRunner runner = runtime.labRunner();
       if(runner == null)
       {
@@ -467,7 +506,7 @@ public class WebPerfService
          return (0);
       }
 
-      List<Map<String, Object>> due = store.query("SELECT id FROM {lab_run} WHERE status = 'QUEUED' AND not_before <= ? ORDER BY not_before, id", now);
+      List<Map<String, Object>> due = store.query("SELECT id FROM {lab_run} WHERE status = 'QUEUED' AND not_before <= ? ORDER BY not_before, id FETCH FIRST " + config.getConcurrency() + " ROWS ONLY", now);
       List<Long>                claimed = new ArrayList<>();
       for(Map<String, Object> row : due)
       {
@@ -513,6 +552,7 @@ public class WebPerfService
       {
          executor.shutdownNow();
       }
+      new WebPerfEvaluationService(store).evaluatePending();
       return (claimed.size());
    }
 
@@ -529,6 +569,7 @@ public class WebPerfService
    {
       Map<String, Object> run      = store.query("SELECT id, target_id, url, strategy, attempts FROM {lab_run} WHERE id = ?", runId).get(0);
       int                 attempts = WebPerfStore.asInt(run.get("attempts")) + 1;
+      new WebPerfChangeService(store).attribute(runId, Instant.now());
       LabRunner.LabResponse response;
       try
       {
@@ -573,6 +614,21 @@ public class WebPerfService
     *******************************************************************************/
    private void store(long runId, Map<String, Object> run, int attempts, LabResultParser.ParsedLab parsed, LabRunner.LabResponse response) throws SQLException
    {
+      store.transaction(tx ->
+      {
+         new WebPerfService(runtime, tx).storeResult(runId, run, attempts, parsed, response);
+         return (null);
+      });
+   }
+
+
+
+   /*******************************************************************************
+    ** Commit the result, findings, report and latest values as one unit, so an
+    ** evaluator never sees a successful run with only some of its evidence.
+    *******************************************************************************/
+   private void storeResult(long runId, Map<String, Object> run, int attempts, LabResultParser.ParsedLab parsed, LabRunner.LabResponse response) throws SQLException
+   {
       Instant completed = response.completedAt();
       String  status    = parsed.runtimeError() == null ? "SUCCEEDED" : "RUNTIME_ERROR";
       store.update("""
@@ -585,6 +641,7 @@ public class WebPerfService
          parsed.score("SEO"), parsed.fcpMs(), parsed.lcpMs(), parsed.tbtMs(), parsed.cls(), parsed.speedIndexMs(), parsed.lcpElement(), parsed.runWarnings(),
          completed, runId);
 
+      store.update("UPDATE {lab_run} SET ttfb_ms = ? WHERE id = ?", LabResultParser.ttfb(response.rawJson()), runId);
       Long targetId = WebPerfStore.asLong(run.get("target_id"));
       for(LabResultParser.Finding finding : parsed.findings())
       {
@@ -718,6 +775,7 @@ public class WebPerfService
             }
          }
       }
+      new WebPerfEvaluationService(store).evaluatePending();
       return (counts);
    }
 

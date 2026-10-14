@@ -213,6 +213,7 @@ class WebPerfP1Test
    @Test
    void testWorkerSuccess() throws Exception
    {
+      store().update("UPDATE {budget} SET enabled = FALSE");
       google.respond(new FixtureServer.Response(200, FixtureServer.fixture("psi-kof22-home-mobile.json")));
       WebPerfService service = service();
       service.applySync(service.planSync(List.of(SITE + "/")), Instant.now());
@@ -319,6 +320,7 @@ class WebPerfP1Test
    @Test
    void testActions() throws Exception
    {
+      store().update("UPDATE {budget} SET enabled = FALSE");
       RunProcessOutput sync = run(WebPerfProcesses.SYNC_TARGETS);
       assertThat(summary(sync)).anyMatch(l -> l.contains("3") && l.contains("added"));
       assertEquals(3, store().query("SELECT id FROM {target}").size());

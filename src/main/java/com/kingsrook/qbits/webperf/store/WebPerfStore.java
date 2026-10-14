@@ -74,6 +74,86 @@ public class WebPerfStore
 
    private final WebPerfQBitConfig  config;
    private final ConnectionSupplier connections;
+   private Connection transactionConnection;
+
+
+
+   /*******************************************************************************
+    ** Work sharing one database transaction.
+    *******************************************************************************/
+   @FunctionalInterface
+   public interface TransactionWork<T>
+   {
+      /*******************************************************************************
+       ** Execute against the transaction's store.
+       *******************************************************************************/
+      T run(WebPerfStore store) throws SQLException;
+   }
+
+
+
+   /*******************************************************************************
+    ** Commit related writes together; roll back every write on failure.
+    *******************************************************************************/
+   public <T> T transaction(TransactionWork<T> work) throws SQLException
+   {
+      if(transactionConnection != null)
+      {
+         return (work.run(this));
+      }
+      try(Connection connection = connections.get())
+      {
+         boolean autoCommit = connection.getAutoCommit();
+         connection.setAutoCommit(false);
+         WebPerfStore transactional = new WebPerfStore(config, connections);
+         transactional.transactionConnection = connection;
+         try
+         {
+            T result = work.run(transactional);
+            connection.commit();
+            return (result);
+         }
+         catch(SQLException | RuntimeException e)
+         {
+            connection.rollback();
+            throw (e);
+         }
+         finally
+         {
+            connection.setAutoCommit(autoCommit);
+         }
+      }
+   }
+
+
+
+   /*******************************************************************************
+    ** Own a connection only outside an enclosing transaction.
+    *******************************************************************************/
+   private ConnectionLease lease() throws SQLException
+   {
+      return (new ConnectionLease(transactionConnection == null ? connections.get() : transactionConnection, transactionConnection == null));
+   }
+
+
+
+   /*******************************************************************************
+    ** A statement's connection lifetime.
+    *******************************************************************************/
+   private record ConnectionLease(Connection connection, boolean owned) implements AutoCloseable
+   {
+      /*******************************************************************************
+       ** Leave an enclosing transaction's connection open.
+       *******************************************************************************/
+      @Override
+      public void close() throws SQLException
+      {
+         if(owned)
+         {
+            connection.close();
+         }
+      }
+   }
 
 
 
@@ -119,7 +199,7 @@ public class WebPerfStore
     *******************************************************************************/
    public int update(String template, Object... params) throws SQLException
    {
-      try(Connection connection = connections.get(); PreparedStatement statement = connection.prepareStatement(sql(template)))
+      try(ConnectionLease lease = lease(); PreparedStatement statement = lease.connection().prepareStatement(sql(template)))
       {
          bind(statement, params);
          return (statement.executeUpdate());
@@ -145,8 +225,8 @@ public class WebPerfStore
 
       String columns      = String.join(", ", row.keySet());
       String placeholders = String.join(", ", java.util.Collections.nCopies(row.size(), "?"));
-      try(Connection connection = connections.get();
-         PreparedStatement statement = connection.prepareStatement("INSERT INTO " + config.applyPrefix(table) + " (" + columns + ") VALUES (" + placeholders + ")",
+      try(ConnectionLease lease = lease();
+         PreparedStatement statement = lease.connection().prepareStatement("INSERT INTO " + config.applyPrefix(table) + " (" + columns + ") VALUES (" + placeholders + ")",
             Statement.RETURN_GENERATED_KEYS))
       {
          bind(statement, row.values().toArray());
@@ -171,7 +251,7 @@ public class WebPerfStore
     *******************************************************************************/
    public List<Map<String, Object>> query(String template, Object... params) throws SQLException
    {
-      try(Connection connection = connections.get(); PreparedStatement statement = connection.prepareStatement(sql(template)))
+      try(ConnectionLease lease = lease(); PreparedStatement statement = lease.connection().prepareStatement(sql(template)))
       {
          bind(statement, params);
          List<Map<String, Object>> rows = new ArrayList<>();
