@@ -148,6 +148,26 @@ class WebPerfTablesGuardrailTest
 
 
    /*******************************************************************************
+    ** Help a host already wrote is kept; the bundle only fills empty slots.
+    *******************************************************************************/
+   @Test
+   void hostHelpIsNotOverridden() throws Exception
+   {
+      QInstance qInstance = WebPerfTestSupport.newInstance();
+      WebPerfQBitConfig config = WebPerfTestSupport.config();
+      new WebPerfQBitProducer().withQBitConfig(config).produce(qInstance);
+      QTableMetaData table = qInstance.getTable(config.applyPrefix(WebPerfSchema.BUDGET));
+      table.getHelpContent().remove(WebPerfHelp.SLOT);
+      table.withHelpContent(WebPerfHelp.SLOT, new QHelpContent("host words"));
+
+      WebPerfHelp.apply(qInstance, config);
+
+      assertThat(table.getHelpContent().get(WebPerfHelp.SLOT).get(0).getContent()).isEqualTo("host words");
+   }
+
+
+
+   /*******************************************************************************
     **
     *******************************************************************************/
    private static String read(Path path)

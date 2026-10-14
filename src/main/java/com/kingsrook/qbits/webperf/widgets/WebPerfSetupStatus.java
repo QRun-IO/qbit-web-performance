@@ -172,16 +172,6 @@ public final class WebPerfSetupStatus
 
 
    /*******************************************************************************
-    ** Whether anything still needs setup (used to open the card prominently).
-    *******************************************************************************/
-   public static boolean needsSetup(WebPerfRuntime runtime) throws SQLException
-   {
-      return (items(runtime).stream().anyMatch(item -> NEEDS_SETUP.equals(item.state())));
-   }
-
-
-
-   /*******************************************************************************
     **
     *******************************************************************************/
    private static long count(WebPerfStore store, String sql) throws SQLException

@@ -242,22 +242,27 @@ class WebPerfP1Test
       for(int days : new int[] { 0, 30 })
       {
          store().update("DELETE FROM {lab_report}");
+         store().update("DELETE FROM {lab_finding}");
          store().update("DELETE FROM {lab_run}");
          store().update("DELETE FROM {budget}");
          config.withReportRetentionDays(days);
          google.respond(new FixtureServer.Response(200, FixtureServer.fixture("psi-kof22-home-mobile.json")));
          store().insert("lab_report", new java.util.LinkedHashMap<>(Map.of("run_id", 999_999L, "bytes", 1,
             "create_date", Instant.now().minus(java.time.Duration.ofDays(40)))));
+         WebPerfRuntime.of(qInstance, "web_performance_").allowReportPruneNow();
          WebPerfService service = service();
          service.applySync(service.planSync(List.of(SITE + "/")), Instant.now());
          service.enqueue(service.requestsFor(service.enabledTargets(false), "MANUAL", "test", Instant.now()), Instant.now());
          assertEquals(2, service.runDue(Instant.now()));
 
+         assertEquals(2, store().query("SELECT id FROM {lab_run} WHERE status = 'SUCCEEDED'").size(), "runs are untouched by pruning");
+         assertThat(store().query("SELECT id FROM {lab_finding}")).as("findings are untouched by pruning").hasSizeGreaterThan(5);
          long old   = store().query("SELECT id FROM {lab_report} WHERE run_id = 999999").size();
          long fresh = store().query("SELECT id FROM {lab_report} WHERE run_id <> 999999").size();
          assertEquals(2, fresh, "the new reports are kept");
          assertEquals(days == 0 ? 1 : 0, old, "retention " + days + " days");
       }
+      assertThat(new WebPerfRuntime(config).reportPruneDue()).as("a new process does not prune right away").isFalse();
    }
 
 
