@@ -194,8 +194,14 @@ class WebPerfForeignKeyTest
       }
       for(QJoinMetaData join : qInstance.getJoins().values())
       {
+         /////////////////////////////////////////////////////////////////////
+         // the referencing side is the one whose field is not its key      //
+         /////////////////////////////////////////////////////////////////////
+         QTableMetaData left  = qInstance.getTable(join.getLeftTable());
          QTableMetaData right = qInstance.getTable(join.getRightTable());
-         join.getJoinOns().forEach(on -> references.add(join.getRightTable() + "." + right.getField(on.getRightField()).getBackendName()));
+         join.getJoinOns().forEach(on -> references.add(on.getRightField().equals(right.getPrimaryKeyField())
+            ? left.getName() + "." + left.getField(on.getLeftField()).getBackendName()
+            : right.getName() + "." + right.getField(on.getRightField()).getBackendName()));
       }
       assertThat(references).as("the QBit's references").hasSizeGreaterThanOrEqualTo(12);
       return (references);
