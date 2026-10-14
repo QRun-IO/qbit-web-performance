@@ -68,6 +68,10 @@ Tier, Scope, Source, Strategy, Metric, Comparator and Severity use dropdowns wit
 | `web_performance_change_event` (Site Changes) | probes, other QBits | read-only |
 | `web_performance_comparison` (Before and After) | the QBit | read-only |
 
+### Starter defaults and empty-state help
+
+The changelog's changeset 10 seeds 13 reference budgets (Google's "good" thresholds and the Lighthouse category bands); nothing else is seeded. The target table is filled by Sync pages from sitemap, and the lab, finding, report, field, regression, change and comparison tables are filled by the qbit as it runs (empty is a normal start). Every table's help (`help/web-performance.yaml`, shown on the table screen) says how its rows get created, and the Setup card on the home shows what still needs doing. Budgets with source RUM are not evaluated yet (no real-user source is wired); LAB and CRUX budgets are.
+
 ## Permissions
 
 Tables and the app use `READ_WRITE_PERMISSIONS` with the base name `web_performance` (configurable), which gives `web_performance.read` and `web_performance.write`. Processes will add `web_performance.test`, `web_performance.manage` and `web_performance.admin` (design §8.1). No table stores a secret.

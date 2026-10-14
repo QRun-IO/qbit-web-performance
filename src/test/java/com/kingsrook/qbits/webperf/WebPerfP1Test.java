@@ -207,6 +207,67 @@ class WebPerfP1Test
 
 
    /*******************************************************************************
+    ** The Setup card reports pages, budgets, the lab runner and field data from
+    ** the runtime's own resolution, with the next step for each.
+    *******************************************************************************/
+   @Test
+   void testSetupCard() throws Exception
+   {
+      String card = html(WebPerfWidgets.SETUP, Map.of());
+      assertThat(card).contains("Needs setup").contains("Sync pages from sitemap").contains("Using defaults").contains("13 reference budgets");
+      assertThat(card).as("a configured runner and CrUX client count as set up").contains("A lab runner is configured").contains("Checked daily");
+
+      WebPerfService service = service();
+      service.applySync(service.planSync(List.of(SITE + "/")), Instant.now());
+      store().update("INSERT INTO {budget} (name, scope, source, metric, comparator, threshold, severity, enabled, seeded) VALUES ('mine', 'SITE', 'LAB', 'LCP', '<=', 2000, 'WARNING', TRUE, FALSE)");
+      card = html(WebPerfWidgets.SETUP, Map.of());
+      assertThat(card).contains("1 page").contains("14 budgets are enabled, 1 of them your own");
+
+      store().update("UPDATE {budget} SET enabled = FALSE");
+      assertThat(html(WebPerfWidgets.SETUP, Map.of())).contains("No budget is enabled");
+
+      config.withLabRunner(null).withCruxClient(null);
+      assertThat(html(WebPerfWidgets.SETUP, Map.of())).contains("No Google API key is configured, so lab tests cannot run").contains("Google field data is not checked");
+   }
+
+
+
+   /*******************************************************************************
+    ** reportRetentionDays deletes old Lighthouse Reports when a run stores its
+    ** own, and 0 (the default) keeps them forever.
+    *******************************************************************************/
+   @Test
+   void testReportRetention() throws Exception
+   {
+      for(int days : new int[] { 0, 30 })
+      {
+         store().update("DELETE FROM {lab_report}");
+         store().update("DELETE FROM {lab_finding}");
+         store().update("DELETE FROM {lab_run}");
+         store().update("DELETE FROM {budget}");
+         config.withReportRetentionDays(days);
+         google.respond(new FixtureServer.Response(200, FixtureServer.fixture("psi-kof22-home-mobile.json")));
+         store().insert("lab_report", new java.util.LinkedHashMap<>(Map.of("run_id", 999_999L, "bytes", 1,
+            "create_date", Instant.now().minus(java.time.Duration.ofDays(40)))));
+         WebPerfRuntime.of(qInstance, "web_performance_").allowReportPruneNow();
+         WebPerfService service = service();
+         service.applySync(service.planSync(List.of(SITE + "/")), Instant.now());
+         service.enqueue(service.requestsFor(service.enabledTargets(false), "MANUAL", "test", Instant.now()), Instant.now());
+         assertEquals(2, service.runDue(Instant.now()));
+
+         assertEquals(2, store().query("SELECT id FROM {lab_run} WHERE status = 'SUCCEEDED'").size(), "runs are untouched by pruning");
+         assertThat(store().query("SELECT id FROM {lab_finding}")).as("findings are untouched by pruning").hasSizeGreaterThan(5);
+         long old   = store().query("SELECT id FROM {lab_report} WHERE run_id = 999999").size();
+         long fresh = store().query("SELECT id FROM {lab_report} WHERE run_id <> 999999").size();
+         assertEquals(2, fresh, "the new reports are kept");
+         assertEquals(days == 0 ? 1 : 0, old, "retention " + days + " days");
+      }
+      assertThat(new WebPerfRuntime(config).reportPruneDue()).as("a new process does not prune right away").isFalse();
+   }
+
+
+
+   /*******************************************************************************
     ** The worker runs a test, stores scores, findings, the report and the
     ** page's latest results.
     *******************************************************************************/

@@ -82,6 +82,13 @@
          <version>2.2.220</version>
          <scope>test</scope>
       </dependency>
+      <!-- WebPerfDefaultsChangelogTest runs the shipped changelog (with its seeded budgets) through real Liquibase. -->
+      <dependency>
+         <groupId>org.liquibase</groupId>
+         <artifactId>liquibase-core</artifactId>
+         <version>4.33.0</version>
+         <scope>test</scope>
+      </dependency>
       <dependency>
          <groupId>org.junit.jupiter</groupId>
          <artifactId>junit-jupiter</artifactId>

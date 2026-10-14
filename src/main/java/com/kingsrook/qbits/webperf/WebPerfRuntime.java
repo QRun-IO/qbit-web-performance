@@ -46,7 +46,13 @@ public class WebPerfRuntime implements QSupplementalInstanceMetaData
    public static final String NAME_PREFIX    = "webPerformance.";
    public static final String INSTANCE_FIELD = "webPerformanceInstance";
 
+   /** At most one report-retention pass an hour per process; the first one waits so restarts and deploys do not each trigger a pass. */
+   public static final long REPORT_PRUNE_INTERVAL_MILLIS = 60L * 60 * 1000;
+   public static final long REPORT_PRUNE_FIRST_DELAY     = 5L * 60 * 1000;
+
    private final WebPerfQBitConfig config;
+   private final java.util.concurrent.atomic.AtomicLong lastReportPruneMillis = new java.util.concurrent.atomic.AtomicLong(
+      System.currentTimeMillis() - REPORT_PRUNE_INTERVAL_MILLIS + REPORT_PRUNE_FIRST_DELAY);
 
 
 
@@ -129,6 +135,29 @@ public class WebPerfRuntime implements QSupplementalInstanceMetaData
    public WebPerfService service()
    {
       return (new WebPerfService(this, store()));
+   }
+
+
+
+   /*******************************************************************************
+    ** Whether a report-retention pass is due; true for exactly one caller per
+    ** hour (shared by every worker of this process).
+    *******************************************************************************/
+   public boolean reportPruneDue()
+   {
+      long now  = System.currentTimeMillis();
+      long last = lastReportPruneMillis.get();
+      return (now - last >= REPORT_PRUNE_INTERVAL_MILLIS && lastReportPruneMillis.compareAndSet(last, now));
+   }
+
+
+
+   /*******************************************************************************
+    ** For tests: make the next reportPruneDue() true.
+    *******************************************************************************/
+   public void allowReportPruneNow()
+   {
+      lastReportPruneMillis.set(0);
    }
 
 
