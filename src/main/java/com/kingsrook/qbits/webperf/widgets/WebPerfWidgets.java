@@ -58,6 +58,7 @@ import com.kingsrook.qqq.backend.core.model.dashboard.widgets.RawHTML;
  *******************************************************************************/
 public final class WebPerfWidgets
 {
+   public static final String SETUP           = "Setup";
    public static final String SITE_SCORES     = "SiteScores";
    public static final String TREND           = "Trend";
    public static final String SLOWEST_PAGES   = "SlowestPages";
@@ -67,7 +68,7 @@ public final class WebPerfWidgets
    public static final String RECORD_PANEL    = "RecordPanel";
 
    /** The home widgets, in order. */
-   public static final List<String> HOME = List.of(SITE_SCORES, TREND, SLOWEST_PAGES, OPPORTUNITIES, FIELD_STATUS, RECENT_RUNS);
+   public static final List<String> HOME = List.of(SETUP, SITE_SCORES, TREND, SLOWEST_PAGES, OPPORTUNITIES, FIELD_STATUS, RECENT_RUNS);
 
    static final int TREND_WEEKS = 26;
 
@@ -409,6 +410,31 @@ public final class WebPerfWidgets
          catch(SQLException e)
          {
             throw (new QException("Error loading recent runs", e));
+         }
+      }
+   }
+
+
+
+   /*******************************************************************************
+    ** Setup: what is configured (pages, lab runner, budgets, field data) and
+    ** the next step for each (WebPerfSetupStatus).
+    *******************************************************************************/
+   public static class Setup extends AbstractWidgetRenderer
+   {
+      /*******************************************************************************
+       ** Render.
+       *******************************************************************************/
+      @Override
+      public RenderWidgetOutput render(RenderWidgetInput input) throws QException
+      {
+         try
+         {
+            return (html(WebPerfSetupStatus.html(runtime(input))));
+         }
+         catch(SQLException e)
+         {
+            throw (new QException("Error loading setup status", e));
          }
       }
    }

@@ -609,6 +609,22 @@ public class WebPerfService
 
 
    /*******************************************************************************
+    ** Apply reportRetentionDays: delete Lighthouse Reports older than that many
+    ** days (0 keeps them forever). The run, its scores and findings stay; only
+    ** the full compressed response goes.
+    *******************************************************************************/
+   private void pruneReports() throws SQLException
+   {
+      int days = runtime.getConfig().getReportRetentionDays();
+      if(days > 0)
+      {
+         store.update("DELETE FROM {lab_report} WHERE create_date < ?", WebPerfStore.utc(Instant.now().minus(java.time.Duration.ofDays(days))));
+      }
+   }
+
+
+
+   /*******************************************************************************
     ** Store a successful response: the run's scores and metrics, its findings,
     ** the compressed report, and the page's latest results.
     *******************************************************************************/
@@ -670,6 +686,7 @@ public class WebPerfService
       report.put("bytes", raw.length);
       report.put("sha256", sha256(raw));
       store.insert(WebPerfSchema.LAB_REPORT, report);
+      pruneReports();
 
       if("SUCCEEDED".equals(status) && targetId != null)
       {

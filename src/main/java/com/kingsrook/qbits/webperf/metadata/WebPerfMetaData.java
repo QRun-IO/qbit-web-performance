@@ -129,6 +129,7 @@ public final class WebPerfMetaData
       {
          qInstance.addProcess(process);
       }
+      addWidget(qInstance, WebPerfWidgets.SETUP, "Setup", WidgetType.HTML, WebPerfWidgets.Setup.class);
       addWidget(qInstance, WebPerfWidgets.SITE_SCORES, "Site Scores", WidgetType.HTML, WebPerfWidgets.SiteScores.class);
       addWidget(qInstance, WebPerfWidgets.TREND, "Performance Trend", WidgetType.LINE_CHART, WebPerfWidgets.Trend.class);
       addWidget(qInstance, WebPerfWidgets.SLOWEST_PAGES, "Slowest Pages", WidgetType.HTML, WebPerfWidgets.SlowestPages.class);

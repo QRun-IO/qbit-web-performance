@@ -191,6 +191,7 @@ public class WebPerfQBitProducer implements QBitMetaDataProducer<WebPerfQBitConf
       qInstance.addQBit(getQBitMetaData());
       new WebPerfRuntime(qBitConfig).addSelfToInstance(qInstance);
       new WebPerfMetaData(qBitConfig).addTo(qInstance);
+      com.kingsrook.qbits.webperf.metadata.WebPerfHelp.apply(qInstance, qBitConfig);
 
       LOG.info("Web performance registered", logPair("tablePrefix", qBitConfig.getTableNamePrefix()), logPair("app", qBitConfig.getAppName()),
          logPair("siteBaseUrl", qBitConfig.getSiteBaseUrl()), logPair("features", qBitConfig.getFeatures()),
