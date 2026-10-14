@@ -127,9 +127,18 @@ public final class WebPerfTestSupport
 
       List<String>  statements = new ArrayList<>();
       StringBuilder current    = new StringBuilder();
+      boolean       skip       = false;
       for(String line : script.split("\n"))
       {
-         if(line.trim().startsWith("--"))
+         //////////////////////////////////////////////////////////////////////
+         // a changeset limited to other databases (the dbms:postgresql      //
+         // orphan cleanup) is skipped, as Liquibase skips it on H2          //
+         //////////////////////////////////////////////////////////////////////
+         if(line.startsWith("-- changeset "))
+         {
+            skip = line.contains(" dbms:") && !line.contains("h2");
+         }
+         if(skip || line.trim().startsWith("--"))
          {
             continue;
          }
