@@ -48,11 +48,17 @@ The host owns the database. Include the QBit's changelog from the host's master 
 - include: { file: db/liquibase/qbit-web-performance/web_performance.changelog.sql }
 ```
 
+## Tested pages and dropdowns
+
+Add a manual tested page with an absolute HTTPS URL, an optional label, a tier and an enabled flag. The QBit fills in its site key, path and Manual source. URLs cannot contain credentials or fragments; URL edits use the same validation and update the path. Sitemap sync remains available for automatic discovery.
+
+Tier, Scope, Source, Strategy, Metric, Comparator and Severity use dropdowns with plain labels and the existing stored values. Each table uses its own applicable choices. Existing seeded budgets need no migration.
+
 ## Tables
 
 | Table | Written by | Notes |
 |---|---|---|
-| `web_performance_target` (Tested Pages) | sitemap sync, people | `label`, `tier` and `enabled` are editable; field-audited |
+| `web_performance_target` (Tested Pages) | sitemap sync, people | `url`, `label`, `tier` and `enabled` are editable; field-audited |
 | `web_performance_lab_run` (Lab Runs) | the QBit | read-only; one Lighthouse run |
 | `web_performance_lab_finding` (Findings) | the QBit | read-only; keyed by `(lighthouse_version, audit_id)` |
 | `web_performance_lab_report` (Lighthouse Reports) | the QBit | read-only; the gzipped PSI response, kept forever by default |
