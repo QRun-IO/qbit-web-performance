@@ -5,6 +5,7 @@ All notable changes to this project are documented here. The format follows Keep
 ## [0.1.0] - Unreleased
 
 ### Fixed
+- Read the QBit metadata version from the build so release artifacts report their actual version, matching the help bundle.
 - Use dropdowns for tier, scope, source, strategy, metric, comparator and severity, preserving existing stored values.
 - Allow manual Tested Pages inserts with a URL. Validate absolute HTTPS URLs and fill in the site, path and Manual source automatically; validate URL edits too.
 
