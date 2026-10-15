@@ -28,6 +28,7 @@ import com.kingsrook.qqq.backend.core.exceptions.QException;
 import com.kingsrook.qqq.backend.core.logging.QLogger;
 import com.kingsrook.qqq.backend.core.model.metadata.MetaDataProducerMultiOutput;
 import com.kingsrook.qqq.backend.core.model.metadata.QInstance;
+import com.kingsrook.qqq.backend.core.model.metadata.help.bundles.HelpBundles;
 import com.kingsrook.qqq.backend.core.model.metadata.qbits.QBitMetaData;
 import com.kingsrook.qqq.backend.core.model.metadata.qbits.QBitMetaDataProducer;
 import com.kingsrook.qqq.backend.core.utils.StringUtils;
@@ -192,6 +193,8 @@ public class WebPerfQBitProducer implements QBitMetaDataProducer<WebPerfQBitConf
       new WebPerfRuntime(qBitConfig).addSelfToInstance(qInstance);
       new WebPerfMetaData(qBitConfig).addTo(qInstance);
       com.kingsrook.qbits.webperf.metadata.WebPerfHelp.apply(qInstance, qBitConfig);
+      // Registration is metadata-only; core guards startup sync when helpContent is absent.
+      HelpBundles.register(qInstance, "help/qbit-web-performance.yaml");
 
       LOG.info("Web performance registered", logPair("tablePrefix", qBitConfig.getTableNamePrefix()), logPair("app", qBitConfig.getAppName()),
          logPair("siteBaseUrl", qBitConfig.getSiteBaseUrl()), logPair("features", qBitConfig.getFeatures()),

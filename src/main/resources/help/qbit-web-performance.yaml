@@ -1,0 +1,664 @@
+bundle: qbit-web-performance
+version: 0.1.0-SNAPSHOT
+layer: QBIT
+entries:
+- key: app:webPerformance;slot:help
+  summary: Page speed tests, Google field data, budgets and regressions for your site.
+  content: |
+    Use the Setup card to see what is configured and what to do next. Sync your pages, configure a lab runner and review your budgets. The dashboard shows site scores, trends, slow pages, opportunities, field data and recent runs.
+
+    Run **{{label:webPerformanceTestPageSpeed}}** for selected pages or **{{label:webPerformanceRunSiteAudit}}** for all enabled pages. Mobile and desktop are separate runs by default. Your host controls the enabled features, device strategies, daily run limit and scheduler. Without a configured runner, lab tests wait in the queue.
+
+    Review **{{label:web_performance_regression}}** for budget breaches and performance changes. Testing requires the testing permission; syncing pages and refreshing field data require administrator permission.
+- key: table:web_performance_target;slot:help
+  summary: Every public page that is tested for speed, with its latest scores.
+  content: |
+    **How rows get created:** Sync pages from your URL source, or add an HTTPS URL with New.
+
+    Use this list to choose which pages you test and review their latest scores. **{{label:webPerformanceSyncPages}}** imports URLs from your configured URL source. Pages that disappear from the source are retained with their history. You can also add an HTTPS URL with **New**.
+
+    Edit the URL, friendly label, tier or enabled setting as needed. Disable a page to skip it when queuing tests. Mark important pages as key pages to include them in key-page tests and site scores.
+
+    Use **{{label:webPerformanceTestPageSpeed}}** for selected pages or **{{label:webPerformanceRunSiteAudit}}** for all enabled pages. Results update after successful tests; the Performance section shows the latest results.
+- key: table:web_performance_target;section:page
+  summary: 'The page address and the settings you can change: label, tier and whether it is tested.'
+- key: table:web_performance_target;section:latest
+  summary: The most recent successful test scores for this page and how many regressions are open.
+- key: table:web_performance_target;section:source
+  summary: Where the page came from and which content record it belongs to.
+- key: table:web_performance_target;section:dates
+  summary: When the record was created and last changed.
+- key: table:web_performance_target;section:webPerformancePerformance
+  summary: Latest mobile and desktop test results for this page, with a note when a test is waiting.
+- key: table:web_performance_target;field:siteKey
+  summary: Which site the page belongs to. Filled in automatically.
+- key: table:web_performance_target;field:url
+  summary: The full address that is tested. Together with the site it is unique.
+- key: table:web_performance_target;field:path
+  summary: The page address without the domain, such as /contact. Filled in automatically from the URL.
+- key: table:web_performance_target;field:source
+  summary: How the page was added. Pages from the sitemap show SITEMAP.
+- key: table:web_performance_target;field:contentTable
+  summary: The kind of content record this page shows, such as a page or blog post, when one could be matched.
+  content: |
+    Your configured URL source can link a page to a content record. Empty when no content record is linked.
+- key: table:web_performance_target;field:contentId
+  summary: The id of the content record this page shows. Filled in automatically with the content kind.
+- key: table:web_performance_target;field:label
+  summary: A friendly name for the page, shown in lists and charts instead of the address. Optional.
+- key: table:web_performance_target;field:tier
+  summary: Choose key pages for frequent tests and site scores, or standard pages for site audits.
+  content: |
+    Choose from {{values:web_performance_tier}}. New pages use **{{default:web_performance_target.tier}}** unless the configured URL source assigns another tier. Scheduled tests require your host to configure a scheduler.
+- key: table:web_performance_target;field:enabled
+  summary: Turn off to stop testing this page.
+  content: |
+    New pages start enabled. Disabled pages are skipped by the daily tests, the site audit and **{{label:webPerformanceTestPageSpeed}}**.
+- key: table:web_performance_target;field:inSitemap
+  summary: Whether the page was in the sitemap the last time it was synced.
+  content: |
+    Turned off, not deleted, when a page leaves the sitemap. Its test history stays.
+- key: table:web_performance_target;field:lastSeenInSitemapAt
+  summary: The last time a sitemap sync found this page listed.
+- key: table:web_performance_target;field:latestMobilePerformance
+  summary: Performance score (0 to 100) of the latest successful mobile test. Higher is better.
+- key: table:web_performance_target;field:latestDesktopPerformance
+  summary: Performance score (0 to 100) of the latest successful desktop test. Higher is better.
+- key: table:web_performance_target;field:latestAccessibility
+  summary: Accessibility score (0 to 100) of the latest successful test. Higher is better.
+- key: table:web_performance_target;field:latestTestedAt
+  summary: When the latest successful test of this page finished.
+- key: table:web_performance_target;field:openRegressionCount
+  summary: How many unresolved regressions the page has. Filled in automatically.
+  content: |
+    Counts suspected and confirmed regressions for this page. Review **{{label:web_performance_regression}}** for details.
+- key: table:web_performance_lab_run;slot:help
+  summary: 'Every Lighthouse test: one page, one device type, from waiting in line to its final result.'
+  content: |
+    **How rows get created:** Queue tests with Test page speed or Run site audit, or let configured schedules queue them.
+
+    Each row is a single test of one page on either mobile or desktop. Runs are created when you use **{{label:webPerformanceTestPageSpeed}}**, **{{label:webPerformanceRunSiteAudit}}**, or configured schedules. With a scheduler, the worker picks up waiting runs every minute by default.
+
+    Scores are 0 to 100. Lab metrics are in milliseconds except **{{label:web_performance_lab_run.cls}}**, which has no unit. If Google is busy or fails, the run is tried up to 3 times in total, waiting 1 minute and then 5 minutes between tries.
+
+    A run that ends as **FAILED**, **RUNTIME_ERROR** or **SKIPPED_QUOTA** can be re-queued with the **{{label:webPerformanceRetryRuns}}** action, which makes a new run and keeps the old one.
+
+    Nothing here can be edited. The full Lighthouse report for each successful run is kept under **{{label:web_performance_lab_report}}**, and its problems are listed under **{{label:web_performance_lab_finding}}**. Lab scores vary a little from run to run, so look at trends rather than single runs.
+- key: table:web_performance_lab_run;section:run
+  summary: Which page was tested, on which device type, why, and how it ended.
+- key: table:web_performance_lab_run;section:scores
+  summary: The four Lighthouse category scores, from 0 to 100.
+- key: table:web_performance_lab_run;section:metrics
+  summary: Measured load times in milliseconds, plus layout shift (no unit).
+- key: table:web_performance_lab_run;section:details
+  summary: Queue timing, attempts, errors and the test environment.
+- key: table:web_performance_lab_run;section:dates
+  summary: When the record was created and last changed.
+- key: table:web_performance_lab_run;field:targetId
+  summary: The tested page this run belongs to.
+- key: table:web_performance_lab_run;field:url
+  summary: The address that was tested.
+- key: table:web_performance_lab_run;field:finalUrl
+  summary: The address the page ended up on after any redirects.
+  content: |
+    Filled in from the test result. If it differs from **{{label:web_performance_lab_run.url}}**, the page redirects.
+- key: table:web_performance_lab_run;field:strategy
+  summary: 'Which device the test simulated: MOBILE (phone) or DESKTOP.'
+  content: |
+    Mobile and desktop are always separate runs.
+- key: table:web_performance_lab_run;field:runner
+  summary: The service that ran the test. Currently PSI, Google PageSpeed Insights.
+- key: table:web_performance_lab_run;field:triggerType
+  summary: Why the test was queued.
+  content: |
+    Why the test was queued: MANUAL, SCHEDULE or SITE_AUDIT.
+
+    **MANUAL** means someone used **{{label:webPerformanceTestPageSpeed}}** or **{{label:webPerformanceRetryRuns}}**. **SCHEDULE** is a scheduled key-page test. **SITE_AUDIT** is the site audit of every enabled page.
+- key: table:web_performance_lab_run;field:triggerRef
+  summary: A short note on what caused the run, such as the action and who used it.
+- key: table:web_performance_lab_run;field:batchId
+  summary: Identifier shared by runs queued together, such as both devices of one page.
+- key: table:web_performance_lab_run;field:status
+  summary: Where the run is, from queued through completion, failure or being skipped.
+  content: |
+    Where the run is: QUEUED, RUNNING, SUCCEEDED, RUNTIME_ERROR, FAILED or SKIPPED_QUOTA.
+
+    - **QUEUED**: waiting its turn (or waiting for a retry, or for a Google API key).
+    - **RUNNING**: being tested now.
+    - **SUCCEEDED**: finished with scores.
+    - **RUNTIME_ERROR**: Lighthouse could not test the page; see **{{label:web_performance_lab_run.errorMessage}}**.
+    - **FAILED**: the test failed after its attempts; see **{{label:web_performance_lab_run.errorMessage}}**.
+    - **SKIPPED_QUOTA**: not run because the daily cap was reached. Use **{{label:webPerformanceRetryRuns}}**.
+- key: table:web_performance_lab_run;field:notBefore
+  summary: The earliest time the run may start. Used for retry waits.
+- key: table:web_performance_lab_run;field:queuedAt
+  summary: When the run was added to the queue.
+- key: table:web_performance_lab_run;field:startedAt
+  summary: When the worker last picked the run up.
+- key: table:web_performance_lab_run;field:completedAt
+  summary: When the run reached its final result.
+- key: table:web_performance_lab_run;field:attempts
+  summary: How many times the test has been tried. A run is tried at most 3 times.
+- key: table:web_performance_lab_run;field:httpStatus
+  summary: The HTTP status Google answered with. 200 means the test was returned.
+- key: table:web_performance_lab_run;field:errorMessage
+  summary: Why the run failed or could not test the page. Empty on success.
+- key: table:web_performance_lab_run;field:lighthouseVersion
+  summary: The Lighthouse version that scored the page.
+  content: |
+    Scores and audits from different major versions are not directly comparable.
+- key: table:web_performance_lab_run;field:chromeUserAgent
+  summary: The browser Google used for the test.
+- key: table:web_performance_lab_run;field:benchmarkIndex
+  summary: Google's measure of how fast the testing machine was at the time.
+  content: |
+    Lower numbers mean a slower machine, which can make scores look worse.
+- key: table:web_performance_lab_run;field:scorePerformance
+  summary: Lighthouse Performance score, 0 to 100. Higher is better.
+  content: |
+    90 and above is good, 50 to 89 needs improvement and below 50 is poor.
+- key: table:web_performance_lab_run;field:scoreAccessibility
+  summary: Lighthouse Accessibility score, 0 to 100. Higher is better.
+- key: table:web_performance_lab_run;field:scoreBestPractices
+  summary: Lighthouse Best Practices score, 0 to 100. Higher is better.
+- key: table:web_performance_lab_run;field:scoreSeo
+  summary: Lighthouse SEO score, 0 to 100. Higher is better.
+- key: table:web_performance_lab_run;field:fcpMs
+  summary: 'First Contentful Paint in milliseconds: when anything first appears on screen.'
+- key: table:web_performance_lab_run;field:lcpMs
+  summary: 'Largest Contentful Paint in milliseconds: when the biggest element on screen has loaded.'
+  content: |
+    Google considers 2,500 ms or less good.
+- key: table:web_performance_lab_run;field:tbtMs
+  summary: 'Total Blocking Time in milliseconds: how long the page was unresponsive while loading.'
+- key: table:web_performance_lab_run;field:cls
+  summary: 'Cumulative Layout Shift: how much the page jumps around while loading. No unit.'
+  content: |
+    Google considers 0.1 or less good.
+- key: table:web_performance_lab_run;field:speedIndexMs
+  summary: 'Speed Index in milliseconds: how quickly the visible part of the page fills in.'
+- key: table:web_performance_lab_run;field:lcpElement
+  summary: The largest element painted, as a page selector. Useful for finding what to speed up.
+- key: table:web_performance_lab_run;field:runWarnings
+  summary: Warnings Lighthouse reported about the test itself, joined together.
+- key: table:web_performance_lab_run;field:deploymentId
+  summary: The observed frontend build associated with this run, when available.
+  content: |
+    Filled from recorded site changes when deployment information is available.
+- key: table:web_performance_lab_run;field:cdnStage
+  summary: The observed CDN stage associated with this run, when available.
+  content: |
+    Filled from recorded site changes when CDN stage information is available.
+- key: table:web_performance_lab_finding;slot:help
+  summary: The problems and tips Lighthouse reported for each test, with how much time or data fixing them could save.
+  content: |
+    **How rows get created:** Successful lab tests create findings for audits that did not fully pass.
+
+    Each row is one audit from one run that did not fully pass (scored below 0.9). Use it to find what to fix: sort by **{{label:web_performance_lab_finding.savingsMs}}** or **{{label:web_performance_lab_finding.savingsBytes}}** to see the biggest wins.
+
+    Findings are grouped by **{{label:web_performance_lab_finding.category}}** and **{{label:web_performance_lab_finding.kind}}**. **{{label:web_performance_lab_finding.auditId}}** is Lighthouse's own id for the check. Lighthouse 13 replaced most performance audits with new "insight" audits, so audit ids are kept with the Lighthouse version and should not be compared across major versions.
+
+    Nothing here can be edited. Findings are created when a run succeeds. The **{{label:web_performance_lab_finding.topItems}}** column lists up to five example files or page elements involved.
+- key: table:web_performance_lab_finding;section:finding
+  summary: What was found, its kind and category, and the estimated saving.
+- key: table:web_performance_lab_finding;section:details
+  summary: The run and page it came from, the audit id, the raw score and supporting detail.
+- key: table:web_performance_lab_finding;section:dates
+  summary: When the record was created and last changed.
+- key: table:web_performance_lab_finding;field:runId
+  summary: The lab run this finding came from.
+- key: table:web_performance_lab_finding;field:targetId
+  summary: The tested page this finding applies to.
+- key: table:web_performance_lab_finding;field:strategy
+  summary: 'The device type of the run: MOBILE or DESKTOP.'
+- key: table:web_performance_lab_finding;field:category
+  summary: Which Lighthouse category the audit belongs to.
+  content: |
+    Which Lighthouse category the audit belongs to: PERFORMANCE, ACCESSIBILITY, BEST_PRACTICES or SEO.
+- key: table:web_performance_lab_finding;field:auditId
+  summary: Lighthouse's own name for the check, such as a short hyphenated id.
+  content: |
+    Useful for searching Google's documentation. Ids change between Lighthouse major versions.
+- key: table:web_performance_lab_finding;field:lighthouseVersion
+  summary: The Lighthouse version that produced the finding.
+- key: table:web_performance_lab_finding;field:kind
+  summary: The type of finding returned by Lighthouse.
+  content: |
+    The type of finding: INSIGHT, OPPORTUNITY, DIAGNOSTIC or FAILED_AUDIT.
+
+    - **INSIGHT**: a performance audit from Lighthouse 13 (audit ids ending in "-insight").
+    - **OPPORTUNITY**: a performance fix with an estimated saving.
+    - **DIAGNOSTIC**: other performance information worth reviewing.
+    - **FAILED_AUDIT**: a failed check in Accessibility, Best Practices or SEO.
+- key: table:web_performance_lab_finding;field:title
+  summary: The plain-language name of the problem, as Lighthouse words it.
+- key: table:web_performance_lab_finding;field:score
+  summary: The audit's own score from 0 to 1. Only audits below 0.9 are kept.
+- key: table:web_performance_lab_finding;field:displayValue
+  summary: A short result Lighthouse shows with the audit, such as a size or time.
+- key: table:web_performance_lab_finding;field:savingsMs
+  summary: Estimated time saved in milliseconds if this is fixed. Empty when Lighthouse gives no estimate.
+- key: table:web_performance_lab_finding;field:savingsBytes
+  summary: Estimated data saved in bytes if this is fixed. Empty when Lighthouse gives no estimate.
+- key: table:web_performance_lab_finding;field:metricSavings
+  summary: Estimated improvement to each metric, as raw Lighthouse data.
+- key: table:web_performance_lab_finding;field:topItems
+  summary: Up to five example addresses or page elements involved, as a list.
+- key: table:web_performance_regression;slot:help
+  summary: Drops in speed or breaches of a budget, kept as records to review and resolve.
+  content: |
+    **How rows get created:** Evaluation of lab and field results creates regressions for budget breaches and performance changes.
+
+    Review pages that breached a budget or changed from their baseline. Evaluation creates suspected regressions and uses further evidence to confirm or reject them; recovery can resolve them automatically.
+
+    Use **{{label:webPerformanceResolveRegressions}}** when you have fixed a problem, or **{{label:webPerformanceDismissRegressions}}** to close a report you choose not to act on. Both require a resolution note and management permission. You cannot edit rows directly.
+
+    Check **{{label:web_performance_budget}}** for thresholds and **{{label:web_performance_change_event}}** for possible causes. An empty list can also mean there is not enough test data yet.
+- key: table:web_performance_regression;section:regression
+  summary: Which page and metric regressed, from what to what, and its severity and status.
+- key: table:web_performance_regression;section:details
+  summary: Sources of the two values, the budget and likely cause, key dates and any note.
+- key: table:web_performance_regression;section:dates
+  summary: When the record was created and last changed.
+- key: table:web_performance_regression;field:targetId
+  summary: The tested page that regressed.
+- key: table:web_performance_regression;field:contentTable
+  summary: The kind of content record the page shows, when known.
+- key: table:web_performance_regression;field:contentId
+  summary: The id of the content record the page shows, when known.
+- key: table:web_performance_regression;field:source
+  summary: 'Where the measurement came from: LAB (Lighthouse), RUM (real visitors) or CRUX (Google field data).'
+- key: table:web_performance_regression;field:strategy
+  summary: 'The device type: MOBILE or DESKTOP for lab results, or a form factor for field data.'
+- key: table:web_performance_regression;field:metric
+  summary: Which measurement regressed.
+  content: |
+    Which measurement regressed, such as LCP, CLS or PERFORMANCE_SCORE.
+- key: table:web_performance_regression;field:baselineValue
+  summary: The earlier, healthy value the current one is compared with.
+- key: table:web_performance_regression;field:baselineRef
+  summary: Where the baseline value came from, such as a run or date range.
+- key: table:web_performance_regression;field:currentValue
+  summary: The latest measured value.
+- key: table:web_performance_regression;field:currentRef
+  summary: Where the current value came from, such as a run or date range.
+- key: table:web_performance_regression;field:delta
+  summary: 'Current minus baseline. Units follow the metric: milliseconds, score points or no unit for CLS.'
+- key: table:web_performance_regression;field:budgetId
+  summary: The budget that was breached, if the regression came from one.
+- key: table:web_performance_regression;field:severity
+  summary: 'How serious it is: WARNING or CRITICAL, taken from the budget.'
+- key: table:web_performance_regression;field:status
+  summary: Where the regression stands, from suspected through confirmation, resolution or dismissal.
+  content: |
+    Where it stands: SUSPECTED, CONFIRMED, NOT_CONFIRMED, RESOLVED or DISMISSED.
+
+    - **SUSPECTED**: spotted, waiting for re-tests.
+    - **CONFIRMED**: re-tests agreed it is real.
+    - **NOT_CONFIRMED**: re-tests did not reproduce it; the record stays visible.
+    - **RESOLVED**: the value recovered or was fixed.
+    - **DISMISSED**: someone decided to ignore it.
+- key: table:web_performance_regression;field:causeChangeEventId
+  summary: The site change that most likely caused it, such as a deploy.
+- key: table:web_performance_regression;field:detectedAt
+  summary: When the regression was first noticed.
+- key: table:web_performance_regression;field:confirmedAt
+  summary: When a re-test confirmed it.
+- key: table:web_performance_regression;field:resolvedAt
+  summary: When it was resolved or dismissed.
+- key: table:web_performance_regression;field:resolutionNote
+  summary: A note on how it was resolved or why it was dismissed.
+- key: table:web_performance_budget;slot:help
+  summary: The thresholds that define when a speed measurement is good enough, by scope, metric and device type.
+  content: |
+    **How rows get created:** The shipped database changelog adds reference budgets; you can add your own with New.
+
+    Set the limits you want your pages to meet. Choose a scope, measurement source, device type, metric, comparison, threshold and severity. Times use milliseconds, scores use points and layout shift has no unit.
+
+    The shipped database changelog supplies reference budgets. You can edit them, add your own or turn them off with **{{label:web_performance_budget.enabled}}**. Changes are audited.
+
+    Enabled lab and URL Google field-data budgets are evaluated as results arrive. Breaches appear in **{{label:web_performance_regression}}**. Real-user budgets are not evaluated until a real-user source is supported.
+- key: table:web_performance_budget;section:budget
+  summary: 'The rule itself: the metric, comparison, threshold, severity and whether it is on.'
+- key: table:web_performance_budget;section:scope
+  summary: 'What the budget applies to: scope, scope value, source and device type.'
+- key: table:web_performance_budget;section:dates
+  summary: When the record was created and last changed.
+- key: table:web_performance_budget;field:name
+  summary: A short description of the rule, such as "LCP good (lab, mobile)".
+- key: table:web_performance_budget;field:scope
+  summary: What the budget covers.
+  content: |
+    Choose the whole site, a tier, a page, a content table or a path prefix. Scope and scope value work together: Site needs no value; Tier takes the stored tier value, such as KEY.
+- key: table:web_performance_budget;field:scopeValue
+  summary: The specific tier, page, content kind or path the scope points at. Leave empty for the whole site.
+- key: table:web_performance_budget;field:source
+  summary: 'Which data the budget checks: LAB (Lighthouse), RUM (real visitors) or CRUX (Google field data).'
+- key: table:web_performance_budget;field:strategy
+  summary: Choose a lab device or field-data form factor; leave empty to apply to all devices.
+- key: table:web_performance_budget;field:metric
+  summary: The measurement to check against the budget.
+  content: |
+    The measurement to check, such as LCP, CLS, FCP, INP, TTFB or PERFORMANCE_SCORE.
+
+    Lab score metrics are PERFORMANCE_SCORE, ACCESSIBILITY_SCORE, BEST_PRACTICES_SCORE and SEO_SCORE. Times are in milliseconds; CLS has no unit; scores are 0 to 100.
+- key: table:web_performance_budget;field:comparator
+  summary: Whether the measurement must be at or below the threshold, or at or above it.
+  content: |
+    How to compare: <= means the value must be at or below the threshold, >= at or above.
+- key: table:web_performance_budget;field:threshold
+  summary: The limit the metric is compared with. Use the metric's own unit, such as milliseconds or score points.
+- key: table:web_performance_budget;field:severity
+  summary: 'How serious a breach is: WARNING or CRITICAL.'
+- key: table:web_performance_budget;field:enabled
+  summary: Turn off to ignore this budget without deleting it.
+- key: table:web_performance_budget;field:seeded
+  summary: On for the reference budgets that shipped with the app. Filled in automatically; you can still edit those
+    rows.
+- key: table:web_performance_change_event;slot:help
+  summary: Things that may have changed speed, such as a deploy, a CDN change or a note, used as markers on trends.
+  content: |
+    **How rows get created:** Configured probes and change sources record observed changes; lab evaluation also records Lighthouse version changes.
+
+    Review deployments and other observed site changes to understand changes in performance. Configured probes and change sources create these records; repeated observations update the existing event. Lighthouse major-version changes are also recorded.
+
+    You cannot edit these rows directly. Use **{{label:webPerformanceCompareChange}}** to compare measurements around a selected change when comparisons are enabled. See **{{label:web_performance_comparison}}** for the results.
+- key: table:web_performance_change_event;section:change
+  summary: What changed, in which component, from what to what, and when it was seen.
+- key: table:web_performance_change_event;section:dates
+  summary: When the record was created and last changed.
+- key: table:web_performance_change_event;field:kind
+  summary: The type of change that may affect performance.
+  content: |
+    The type of change: FRONTEND_DEPLOY, BACKEND_DEPLOY, CDN_STAGE, LIGHTHOUSE_VERSION or MANUAL.
+- key: table:web_performance_change_event;field:component
+  summary: The part of the site that changed, such as FRONTEND.
+- key: table:web_performance_change_event;field:fromValue
+  summary: The value before the change, such as the old build id.
+- key: table:web_performance_change_event;field:toValue
+  summary: The value after the change, such as the new build id.
+- key: table:web_performance_change_event;field:observedAt
+  summary: When the change was first noticed.
+- key: table:web_performance_change_event;field:source
+  summary: What recorded the change.
+  content: |
+    What recorded the change: PROBE (a build check), WEBHOOK, QBIT_CDN (the CDN setup) or USER (a person).
+- key: table:web_performance_change_event;field:note
+  summary: Free text describing the change.
+- key: table:web_performance_comparison;slot:help
+  summary: Measurements compared before and after a site change, per metric, device type and segment.
+  content: |
+    **How rows get created:** Run Compare before and after on a site change when enough samples are available.
+
+    Use **{{label:webPerformanceCompareChange}}** on a site change to create before-and-after comparisons. Lab comparisons need at least three successful samples on each side using the same Lighthouse major version.
+
+    Review the metric, device type, sample counts and time windows alongside the before and after values. **{{label:web_performance_comparison.deltaPct}}** shows the percentage change. You cannot edit these results directly; an empty list can mean no comparison has run or there are too few samples.
+- key: table:web_performance_comparison;section:comparison
+  summary: The change, the metric and segment, the before and after values and how far they moved.
+- key: table:web_performance_comparison;section:details
+  summary: Scope, data source, device type, sample counts and the time windows compared.
+- key: table:web_performance_comparison;section:dates
+  summary: When the record was created and last changed.
+- key: table:web_performance_comparison;field:changeEventId
+  summary: The site change this comparison is around.
+- key: table:web_performance_comparison;field:scope
+  summary: 'What was compared: SITE, TARGET (one page) or KEY (the key page tier).'
+- key: table:web_performance_comparison;field:source
+  summary: The measurement source used for the comparison. Lab comparisons are currently implemented.
+- key: table:web_performance_comparison;field:strategy
+  summary: The device type or form factor compared, such as MOBILE or DESKTOP.
+- key: table:web_performance_comparison;field:metric
+  summary: The measurement compared.
+  content: |
+    The measurement compared, such as LCP or PERFORMANCE_SCORE.
+- key: table:web_performance_comparison;field:segment
+  summary: The slice of visitors or pages compared, such as a country. Empty for everything.
+- key: table:web_performance_comparison;field:beforeValue
+  summary: The value before the change, as a median or 75th percentile.
+- key: table:web_performance_comparison;field:beforeN
+  summary: How many measurements went into the before value. More samples mean a more reliable number.
+- key: table:web_performance_comparison;field:beforeWindow
+  summary: The time span of the before measurements.
+- key: table:web_performance_comparison;field:afterValue
+  summary: The value after the change, as a median or 75th percentile.
+- key: table:web_performance_comparison;field:afterN
+  summary: How many measurements went into the after value. More samples mean a more reliable number.
+- key: table:web_performance_comparison;field:afterWindow
+  summary: The time span of the after measurements.
+- key: table:web_performance_comparison;field:delta
+  summary: After minus before, in the metric's own unit.
+- key: table:web_performance_comparison;field:deltaPct
+  summary: The same difference as a percentage of the before value.
+- key: table:web_performance_field_snapshot;slot:help
+  summary: What real Chrome users experienced on the site over the last 28 days, as reported by Google (CrUX).
+  content: |
+    **How rows get created:** Refresh Google field data, manually or through a configured schedule, to store snapshots.
+
+    Google collects speed data from Chrome users and publishes the 75th percentile (p75) of each Core Web Vital over a rolling 28-day period. Each row is one check for the whole site (origin) or one page (URL), and one form factor: ALL, PHONE or DESKTOP.
+
+    If Google has no data (common for low-traffic pages), the row is recorded as **NO_DATA** instead of left out, and re-checking only moves **{{label:web_performance_field_snapshot.lastCheckedAt}}**. Rows with data are stored once per 28-day period.
+
+    With a scheduler configured, data refreshes daily by default, or on demand with **{{label:webPerformanceRefreshFieldData}}** (admin permission). It needs a Google API key. Nothing here can be edited. See also **{{label:web_performance_lab_run}}**, which are lab tests, not real users.
+- key: table:web_performance_field_snapshot;section:snapshot
+  summary: 'What was checked: the site or page, the form factor, the result and when it was last checked.'
+- key: table:web_performance_field_snapshot;section:p75
+  summary: The 75th percentile of each Core Web Vital over the 28-day period, plus the period dates.
+- key: table:web_performance_field_snapshot;section:dates
+  summary: When the record was created and last changed.
+- key: table:web_performance_field_snapshot;field:source
+  summary: Which Google service provided the data.
+  content: |
+    Which Google service provided the data. Currently CRUX_API.
+- key: table:web_performance_field_snapshot;field:scope
+  summary: Whether the row covers the whole site (ORIGIN) or a single page (URL).
+- key: table:web_performance_field_snapshot;field:scopeKey
+  summary: The site origin or the page address that was checked.
+- key: table:web_performance_field_snapshot;field:formFactor
+  summary: 'The devices covered: ALL, PHONE or DESKTOP.'
+- key: table:web_performance_field_snapshot;field:status
+  summary: Whether Google returned data for this snapshot.
+  content: |
+    OK when Google returned data, NO_DATA when it had none.
+- key: table:web_performance_field_snapshot;field:periodStart
+  summary: First day of Google's 28-day collection period. Empty when there is no data.
+  content: |
+    First day of Google's 28-day collection period. Empty for NO_DATA.
+- key: table:web_performance_field_snapshot;field:periodEnd
+  summary: Last day of Google's 28-day collection period. Empty when there is no data.
+  content: |
+    Last day of Google's 28-day collection period. Empty for NO_DATA.
+- key: table:web_performance_field_snapshot;field:p75LcpMs
+  summary: Largest Contentful Paint at the 75th percentile, in milliseconds. 2,500 or less is good.
+- key: table:web_performance_field_snapshot;field:p75InpMs
+  summary: Interaction to Next Paint at the 75th percentile, in milliseconds. 200 or less is good.
+- key: table:web_performance_field_snapshot;field:p75Cls
+  summary: Cumulative Layout Shift at the 75th percentile, with no unit. 0.1 or less is good.
+- key: table:web_performance_field_snapshot;field:p75FcpMs
+  summary: First Contentful Paint at the 75th percentile, in milliseconds. 1,800 or less is good.
+- key: table:web_performance_field_snapshot;field:p75TtfbMs
+  summary: Time to First Byte at the 75th percentile, in milliseconds. 800 or less is good.
+- key: table:web_performance_field_snapshot;field:distributions
+  summary: How users split between good, needs improvement and poor for each metric, as raw data.
+- key: table:web_performance_field_snapshot;field:lastCheckedAt
+  summary: The last time Google was asked about this page or site, even if nothing changed.
+- key: table:web_performance_lab_report;slot:help
+  summary: The complete Lighthouse report of each successful test, kept compressed for later download.
+  content: |
+    **How rows get created:** Successful lab tests store their complete compressed responses here.
+
+    Open a report when you need the complete Lighthouse response behind a run. Each successful run has at most one compressed report. Download and decompress its content to inspect the JSON.
+
+    **{{label:web_performance_lab_report.sha256}}** lets you verify the uncompressed copy. Reports are kept indefinitely by default; your host can configure retention to delete older reports while keeping run scores and findings. You cannot edit reports directly. See **{{label:web_performance_lab_run}}** and **{{label:web_performance_lab_finding}}** for readable results.
+- key: table:web_performance_lab_report;section:report
+  summary: Which run the report belongs to, its size and checksum, and the downloadable content.
+- key: table:web_performance_lab_report;section:dates
+  summary: When the record was created and last changed.
+- key: table:web_performance_lab_report;field:runId
+  summary: The lab run this report belongs to. Each run has at most one.
+- key: table:web_performance_lab_report;field:content
+  summary: The full report as compressed JSON. Download it to read it in a Lighthouse viewer or a text editor after unzipping.
+- key: table:web_performance_lab_report;field:bytes
+  summary: The size of the report before compression, in bytes.
+- key: table:web_performance_lab_report;field:sha256
+  summary: A checksum of the uncompressed report, to verify a copy is complete.
+- key: process:webPerformanceTestPageSpeed;slot:help
+  summary: Queues Google PageSpeed (Lighthouse) tests for the selected pages, for each configured device strategy.
+  content: |
+    Select tested pages, then run this action. A review screen shows how many runs will be queued before anything is queued.
+
+    - Each configured device strategy creates a separate run; mobile and desktop are enabled by default.
+    - With a scheduler configured, tests run in the background about once a minute by default, and results appear under **{{label:web_performance_lab_run}}** and the Performance dashboard.
+    - If a page already has a waiting run, it is merged rather than queued twice.
+    - Your host configures a daily run cap. Runs over the cap are recorded as skipped; use **{{label:webPerformanceRetryRuns}}** the next day.
+    - Content records with no tested page (a draft, or not in the sitemap) and disabled pages are skipped.
+    - Without a Google API key the runs wait in the queue until one is configured.
+
+    You need the page speed testing permission.
+- key: process:webPerformanceRunSiteAudit;slot:help
+  summary: Queues a speed test for every enabled tested page, for each configured device strategy.
+  content: |
+    Use it to get a fresh picture of the whole site, for example after a release. The review screen lists the enabled pages that will be tested; disabled pages are left out. Run it from **{{label:web_performance_target}}**.
+
+    Tests then run in the background. A site audit can use much of your configured daily run cap, so avoid running it repeatedly. Runs that do not fit are recorded as skipped and can be re-queued with **{{label:webPerformanceRetryRuns}}**.
+
+    You need the page speed testing permission. See also **{{label:webPerformanceScheduleSiteAudit}}**, which queues a weekly audit by default when a scheduler is configured.
+- key: process:webPerformanceRetryRuns;slot:help
+  summary: Queues a new test for lab runs that failed, hit an error or were skipped for the daily cap.
+  content: |
+    Select runs in **{{label:web_performance_lab_run}}** and run this action. Only runs that failed, ended with a runtime error or were skipped because of the daily cap are retried; successful and waiting runs are listed as not retried. Each retry is a new run for the same page and device type.
+
+    Transient failures are tried up to three times in total, with one-minute and five-minute waits; use this action for runs that still ended failed or skipped.
+
+    You need the page speed testing permission.
+- key: process:webPerformanceSyncPages;slot:help
+  summary: Updates tested pages from your configured URL source.
+  content: |
+    Review the pages returned by your configured URL source before applying the changes. New pages are added and enabled; existing pages are kept. Pages that leave the source are marked as absent but retain their history.
+
+    Use this after publishing pages when you want to test them sooner. Automatic syncing requires a configured scheduler. You need web performance administrator permission.
+- key: process:webPerformanceRefreshFieldData;slot:help
+  summary: Asks Google for its real-user speed data about the site and its tested pages.
+  content: |
+    This queries Google's Chrome User Experience Report for the whole site and for each enabled page, once per device type. Results with no data are stored as no data, because Google only publishes figures for sites and pages with enough Chrome traffic. The review screen shows how many queries will be made without calling Google.
+
+    It also runs automatically when your host configures a scheduler. It needs a Google API key; without one it reports that field data cannot be checked.
+
+    You need the web performance administrator permission. Results show in **{{label:web_performance_field_snapshot}}**.
+- key: process:webPerformanceRunQueuedTests;slot:help
+  summary: Runs due page-speed tests in the background.
+  content: |
+    With a scheduler configured, the worker checks the queue every minute by default. Transient failures are tried up to three times in total, with one-minute and five-minute waits. You normally do not need to run this yourself.
+- key: process:webPerformanceScheduleKeyTests;slot:help
+  summary: Queues tests for enabled key pages on the configured schedule.
+  content: |
+    Set a page to the key-page tier to include it. With a scheduler configured, the default is daily in your host's configured time zone. Your host can change the schedule. Runs wait for the queue worker.
+- key: process:webPerformanceScheduleSiteAudit;slot:help
+  summary: Queues tests for all enabled pages on the configured site-audit schedule.
+  content: |
+    With a scheduler configured, the default site audit runs weekly in your host's configured time zone. Your host can change the schedule. Runs count toward the daily limit; excess runs are recorded as skipped.
+- key: process:webPerformanceScheduledSync;slot:help
+  summary: Updates tested pages from the configured URL source on a schedule.
+  content: |
+    With a scheduler configured, this runs daily by default. Like **{{label:webPerformanceSyncPages}}**, it adds pages and marks pages that left the source without deleting their history. Your host can change the schedule.
+- key: process:webPerformanceScheduledFieldData;slot:help
+  summary: Refreshes Google field data on the configured schedule.
+  content: |
+    With a scheduler configured, this runs daily by default. Like **{{label:webPerformanceRefreshFieldData}}**, it checks your origin and enabled pages. It skips the refresh when no field-data client is configured.
+- key: widget:webPerformanceSiteScores;slot:label
+  summary: Median Lighthouse scores (Performance, Accessibility, Best Practices, SEO) for the key pages, mobile and desktop.
+- key: widget:webPerformanceTrend;slot:label
+  summary: Weekly median Performance score for mobile and desktop, from the first week with a successful test.
+- key: widget:webPerformanceSlowestPages;slot:label
+  summary: The ten tested pages with the lowest latest mobile Performance score, with their lab LCP and top finding.
+- key: widget:webPerformanceTopOpportunities;slot:label
+  summary: The audit findings affecting the most pages in each page's latest test, with the estimated time savings.
+- key: widget:webPerformanceFieldDataStatus;slot:label
+  summary: Google's real-user LCP, INP, CLS and TTFB for the site over the last 28 days, or why none is available.
+- key: widget:webPerformanceRecentRuns;slot:label
+  summary: The five most recent page speed test runs with status and scores, and how many runs are waiting.
+- key: widget:webPerformanceRecordPanel;slot:label
+  summary: This page's latest speed scores for mobile and desktop, key lab metrics, what to fix and a mobile score trend.
+- key: table:web_performance_lab_run;field:ttfbMs
+  summary: Time to first byte measured by the lab run, in milliseconds.
+- key: table:web_performance_lab_run;field:evaluatedAt
+  summary: When this run was processed by the regression evaluator; blank until evaluated.
+- key: table:web_performance_lab_run;field:changeEventId
+  summary: The site change associated with this lab run.
+  content: |
+    See **{{label:web_performance_change_event}}** for the deployment or other change being measured.
+- key: table:web_performance_regression;field:firstRunId
+  summary: The lab run that first raised this regression.
+- key: table:web_performance_regression;field:checkpointRunId
+  summary: The lab run used as the latest confirmation checkpoint.
+  content: |
+    Initially the first run; updated when the regression is confirmed. See **{{label:web_performance_lab_run}}** for its measurements.
+- key: table:web_performance_regression;field:lighthouseMajor
+  summary: The Lighthouse major version used to keep regression comparisons compatible.
+- key: table:web_performance_regression;field:failedAudits
+  summary: Comma-separated audit identifiers that newly failed when this regression was raised.
+- key: table:web_performance_change_event;field:lastSeenAt
+  summary: The latest time the change source reported this same event.
+- key: table:web_performance_change_event;field:eventKey
+  summary: Generated key that prevents repeated observations from creating duplicate change events.
+- key: table:web_performance_change_event;field:siteKey
+  summary: The configured site this change belongs to.
+- key: table:web_performance_comparison;field:targetId
+  summary: The page whose measurements are compared before and after the change.
+- key: table:web_performance_field_snapshot;field:evaluatedAt
+  summary: When this field-data snapshot was processed by the regression evaluator.
+- key: process:webPerformanceDismissRegressions;slot:help
+  summary: Dismiss selected open regressions with a required resolution note.
+  content: |
+    Review the preview before continuing. Closed regressions are skipped. Use **{{label:webPerformanceResolveRegressions}}** when the problem has been fixed.
+- key: process:webPerformanceResolveRegressions;slot:help
+  summary: Mark selected open regressions resolved with a required resolution note.
+  content: |
+    Review the preview before continuing. Closed regressions are skipped; this records your decision without running another page-speed test.
+- key: process:webPerformanceCompareChange;slot:help
+  summary: Compare page performance before and after selected site changes.
+  content: |
+    Creates **{{label:web_performance_comparison}}** records. Lab comparisons need at least three successful samples on each side using the same Lighthouse major version.
+- key: process:webPerformanceProbeDeploys;slot:help
+  summary: Check configured sources for deployments and other site changes.
+  content: |
+    The scheduled check records observations in **{{label:web_performance_change_event}}**. Repeated observations update the existing event instead of creating duplicates.
+- key: widget:webPerformanceSetup;slot:label
+  summary: Check your tested pages, lab runner, budgets and field-data setup, with the next step for each.
+- key: possibleValueSource:web_performance_target;slot:help
+  summary: Choose a tested page.
+- key: possibleValueSource:web_performance_lab_run;slot:help
+  summary: Choose a lab test run.
+- key: possibleValueSource:web_performance_budget;slot:help
+  summary: Choose a performance budget.
+- key: possibleValueSource:web_performance_change_event;slot:help
+  summary: Choose an observed site change.
+- key: possibleValueSource:web_performance_regression;slot:help
+  summary: Choose a performance regression.
+- key: possibleValueSource:web_performance_tier;slot:help
+  summary: Choose how frequently a page should be tested.
+- key: possibleValueSource:web_performance_target_source;slot:help
+  summary: How a tested page was discovered.
+- key: possibleValueSource:web_performance_strategy;slot:help
+  summary: Choose a device strategy for lab testing.
+- key: possibleValueSource:web_performance_strategy_or_form_factor;slot:help
+  summary: Choose a lab device strategy or field-data form factor.
+- key: possibleValueSource:web_performance_field_source;slot:help
+  summary: The Google service that supplied field data.
+- key: possibleValueSource:web_performance_field_scope;slot:help
+  summary: Choose field data for one page or an entire origin.
+- key: possibleValueSource:web_performance_budget_scope;slot:help
+  summary: Choose which pages a budget applies to.
+- key: possibleValueSource:web_performance_measurement_source;slot:help
+  summary: Choose the source of performance measurements.
+- key: possibleValueSource:web_performance_comparison_source;slot:help
+  summary: Choose the source of before-and-after measurements.
+- key: possibleValueSource:web_performance_comparison_scope;slot:help
+  summary: Choose which pages to compare.
+- key: possibleValueSource:web_performance_change_source;slot:help
+  summary: How a site change was reported.
+- key: possibleValueSource:web_performance_metric;slot:help
+  summary: Choose the performance measurement to evaluate.
+- key: possibleValueSource:web_performance_comparator;slot:help
+  summary: Choose whether a value must be at most or at least the threshold.
+- key: possibleValueSource:web_performance_severity;slot:help
+  summary: Choose how serious a budget breach is.
