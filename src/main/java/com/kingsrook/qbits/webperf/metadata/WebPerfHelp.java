@@ -33,15 +33,15 @@ import com.kingsrook.qqq.backend.core.model.metadata.tables.QTableMetaData;
 
 
 /*******************************************************************************
- ** Applies help/web-performance.yaml (the QQQ help-bundle format) to the
+ ** Applies help/qbit-web-performance.yaml (the QQQ help-bundle format) to the
  ** Performance app and its web_performance_* tables: what each table is for and
  ** how its rows get created, shown on the table screen and when it is empty.
- ** STAND-IN(core=QRun-IO/qqq#1198, removeBy=4.1.0-RC.9): replace with HelpBundles.register once the pinned QQQ
- ** release includes it; the bundle file stays the same.
+ ** Keeps table and app empty-state help available even without the Help tables.
+ ** The producer also registers this resource with the core bundle registry.
  *******************************************************************************/
 public final class WebPerfHelp
 {
-   public static final String RESOURCE = "/help/web-performance.yaml";
+   public static final String RESOURCE = "/help/qbit-web-performance.yaml";
    public static final String SLOT     = "help";
 
 
@@ -67,14 +67,18 @@ public final class WebPerfHelp
             throw (new IOException("missing resource"));
          }
          JsonNode bundle = new ObjectMapper(new YAMLFactory()).readTree(stream);
-         if(!"web-performance".equals(bundle.path("bundle").asText()) || !"QBIT".equals(bundle.path("layer").asText()))
+         if(!"qbit-web-performance".equals(bundle.path("bundle").asText()) || !"QBIT".equals(bundle.path("layer").asText()))
          {
             throw (new IOException("invalid bundle header"));
          }
          Map<String, JsonNode> entries = new LinkedHashMap<>();
          for(JsonNode entry : bundle.path("entries"))
          {
-            String key     = entry.path("key").asText();
+            String key = entry.path("key").asText();
+            if(!key.endsWith(";slot:help") || !(key.startsWith("table:") || key.startsWith("app:")))
+            {
+               continue;
+            }
             String summary = entry.path("summary").asText();
             if(key.isBlank() || summary.isBlank() || summary.length() > 120 || entry.path("content").asText().isBlank() || entries.put(key, entry) != null)
             {

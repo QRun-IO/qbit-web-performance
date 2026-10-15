@@ -70,7 +70,15 @@ Tier, Scope, Source, Strategy, Metric, Comparator and Severity use dropdowns wit
 
 ### Starter defaults and empty-state help
 
-The changelog's changeset 10 seeds 13 reference budgets (Google's "good" thresholds and the Lighthouse category bands); nothing else is seeded. The target table is filled by Sync pages from sitemap, and the lab, finding, report, field, regression, change and comparison tables are filled by the qbit as it runs (empty is a normal start). Every table's help (`help/web-performance.yaml`, shown on the table screen) says how its rows get created, and the Setup card on the home shows what still needs doing. Budgets with source RUM are not evaluated yet (no real-user source is wired); LAB and CRUX budgets are.
+The changelog's changeset 10 seeds 13 reference budgets (Google's "good" thresholds and the Lighthouse category bands); nothing else is seeded. The target table is filled by Sync pages from sitemap, and the lab, finding, report, field, regression, change and comparison tables are filled by the qbit as it runs (empty is a normal start). Every table's help (`help/qbit-web-performance.yaml`, shown on the table screen) says how its rows get created, and the Setup card on the home shows what still needs doing. Budgets with source RUM are not evaluated yet (no real-user source is wired); LAB and CRUX budgets are.
+
+## In-app help
+
+The QBit registers [`help/qbit-web-performance.yaml`](src/main/resources/help/qbit-web-performance.yaml) with QQQ help bundles (RC.7 or later). Registration is metadata-only; core skips startup synchronization when the host has no `helpContent` table. App and table empty-state help remains available without Help installed.
+
+To override text, register your own uniquely named `layer: HOST` bundle with entries using the same keys and roles. HOST entries take precedence over QBIT entries; startup synchronization preserves administrator edits. Keep deployment-specific URLs, schedules and content-table actions in the host bundle. The shipped keys use the default metadata names; hosts that rename or namespace objects should provide help matching those names.
+
+`WebPerfHelpBundleTest` checks owned metadata, live references and summary length with `HelpBundleAssertions`. Run it as part of `./mvnw verify`. The bundle version is the literal Maven project version; update it when changing the project version.
 
 ## Permissions
 
