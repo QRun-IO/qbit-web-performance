@@ -45,7 +45,13 @@ class WebPerfHelpBundleTest
 
       assertThat(qInstance.getTable("helpContent")).isNull();
       assertThat(HelpBundles.of(qInstance).getBundles()).singleElement()
-         .satisfies(bundle -> assertThat(bundle.getId()).isEqualTo("qbit-web-performance"));
+         .satisfies(bundle ->
+         {
+            assertThat(bundle.getId()).isEqualTo("qbit-web-performance");
+            assertThat(System.getProperty("qbit.artifactVersion")).isNotBlank();
+            assertThat(bundle.getVersion()).isEqualTo(System.getProperty("qbit.artifactVersion"))
+               .isEqualTo(WebPerfQBitProducer.VERSION);
+         });
       HelpBundleAssertions.forInstance(qInstance)
          .bundles("help/qbit-web-performance.yaml")
          .owning(target -> target.name().startsWith("web_performance_") || target.name().startsWith("webPerformance"))

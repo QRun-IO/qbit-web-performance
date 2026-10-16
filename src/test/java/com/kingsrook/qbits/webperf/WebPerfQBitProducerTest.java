@@ -74,6 +74,9 @@ class WebPerfQBitProducerTest
    @Test
    void testRegistersIntoAFreshInstance() throws Exception
    {
+      assertThat(System.getProperty("qbit.artifactVersion")).isNotBlank();
+      assertThat(WebPerfQBitProducer.VERSION).isEqualTo(System.getProperty("qbit.artifactVersion"));
+      assertThat(new WebPerfQBitProducer().getQBitMetaData().getVersion()).isEqualTo(WebPerfQBitProducer.VERSION);
       QInstance qInstance = WebPerfTestSupport.newInstance();
       new WebPerfQBitProducer().withQBitConfig(WebPerfTestSupport.config()
          .withUrlSource(new SitemapUrlSource("https://www.example.com/sitemap.xml"))
