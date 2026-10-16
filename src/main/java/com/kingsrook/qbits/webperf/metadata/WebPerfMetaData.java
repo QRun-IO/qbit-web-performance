@@ -50,6 +50,7 @@ import com.kingsrook.qqq.backend.core.model.metadata.fields.QFieldType;
 import com.kingsrook.qqq.backend.core.model.metadata.layout.QAppMetaData;
 import com.kingsrook.qqq.backend.core.model.metadata.layout.QAppSection;
 import com.kingsrook.qqq.backend.core.model.metadata.layout.QIcon;
+import com.kingsrook.qqq.backend.core.model.metadata.permissions.DenyBehavior;
 import com.kingsrook.qqq.backend.core.model.metadata.permissions.PermissionLevel;
 import com.kingsrook.qqq.backend.core.model.metadata.permissions.QPermissionRules;
 import com.kingsrook.qqq.backend.core.model.metadata.possiblevalues.QPossibleValue;
@@ -129,13 +130,15 @@ public final class WebPerfMetaData
       {
          qInstance.addProcess(process);
       }
-      addWidget(qInstance, WebPerfWidgets.SETUP, "Setup", WidgetType.HTML, WebPerfWidgets.Setup.class);
+      addWidget(qInstance, WebPerfWidgets.NOT_CONFIGURED, "Page Speed Setup", WidgetType.HTML, WebPerfWidgets.NotConfigured.class);
+      qInstance.getWidget(config.qualify(WebPerfWidgets.NOT_CONFIGURED)).setIsCard(false);
+      addAdminWidget(qInstance, WebPerfWidgets.SETUP, "Page Speed Setup (Admin)", WebPerfWidgets.Setup.class);
       addWidget(qInstance, WebPerfWidgets.SITE_SCORES, "Site Scores", WidgetType.HTML, WebPerfWidgets.SiteScores.class);
       addWidget(qInstance, WebPerfWidgets.TREND, "Performance Trend", WidgetType.LINE_CHART, WebPerfWidgets.Trend.class);
       addWidget(qInstance, WebPerfWidgets.SLOWEST_PAGES, "Slowest Pages", WidgetType.HTML, WebPerfWidgets.SlowestPages.class);
       addWidget(qInstance, WebPerfWidgets.OPPORTUNITIES, "Top Opportunities", WidgetType.HTML, WebPerfWidgets.TopOpportunities.class);
       addWidget(qInstance, WebPerfWidgets.FIELD_STATUS, "Google Field Data", WidgetType.HTML, WebPerfWidgets.FieldDataStatus.class);
-      addWidget(qInstance, WebPerfWidgets.RECENT_RUNS, "Recent Runs", WidgetType.HTML, WebPerfWidgets.RecentRuns.class);
+      addAdminWidget(qInstance, WebPerfWidgets.RECENT_RUNS, "Recent Runs", WebPerfWidgets.RecentRuns.class);
       addWidget(qInstance, WebPerfWidgets.RECORD_PANEL, "Performance", WidgetType.HTML, WebPerfWidgets.RecordPanel.class);
 
       List<String> panelTables = new ArrayList<>(config.getContentTables());
@@ -254,6 +257,20 @@ public final class WebPerfMetaData
          .withDefaultValues(new java.util.HashMap<>(Map.of(WebPerfRuntime.INSTANCE_FIELD, config.getTableNamePrefix())))
          .withPermissionRules(new QPermissionRules().withLevel(PermissionLevel.HAS_ACCESS_PERMISSION)
             .withPermissionBaseName(config.getPermissionBaseName() + ".view")));
+   }
+
+
+
+   /*******************************************************************************
+    ** A system widget for a host's Admin area (WebPerfWidgets.ADMIN): gated to
+    ** "<base>.admin.hasAccess" and HIDDEN, never a locked shell, when denied.
+    *******************************************************************************/
+   private void addAdminWidget(QInstance qInstance, String name, String label, Class<? extends AbstractWidgetRenderer> renderer)
+   {
+      addWidget(qInstance, name, label, WidgetType.HTML, renderer);
+      qInstance.getWidget(config.qualify(name)).setPermissionRules(new QPermissionRules().withLevel(PermissionLevel.HAS_ACCESS_PERMISSION)
+         .withPermissionBaseName(config.getPermissionBaseName() + ".admin")
+         .withDenyBehavior(DenyBehavior.HIDDEN));
    }
 
 

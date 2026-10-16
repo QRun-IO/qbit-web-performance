@@ -87,6 +87,71 @@ class WebPerfP1Test
 
 
    /*******************************************************************************
+    ** The business home has no provider setup readout and no run-queue widget;
+    ** those are the admin-placeable list.
+    *******************************************************************************/
+   @Test
+   void testHomeIsBusinessOnly()
+   {
+      List<String> home = qInstance.getApp(config.getAppName()).getWidgets();
+      assertThat(home).doesNotContain(config.qualify(WebPerfWidgets.SETUP), config.qualify(WebPerfWidgets.RECENT_RUNS));
+      assertThat(WebPerfWidgets.HOME).doesNotContain(WebPerfWidgets.SETUP, WebPerfWidgets.RECENT_RUNS);
+      assertThat(WebPerfWidgets.ADMIN).containsExactly(WebPerfWidgets.SETUP, WebPerfWidgets.RECENT_RUNS);
+      assertThat(home).contains(config.qualify(WebPerfWidgets.SITE_SCORES), config.qualify(WebPerfWidgets.TREND), config.qualify(WebPerfWidgets.SLOWEST_PAGES),
+         config.qualify(WebPerfWidgets.OPPORTUNITIES), config.qualify(WebPerfWidgets.FIELD_STATUS));
+      for(String name : WebPerfWidgets.ADMIN)
+      {
+         assertThat(qInstance.getWidget(config.qualify(name))).as(name + " is still defined for a host to place").isNotNull();
+      }
+   }
+
+
+
+   /*******************************************************************************
+    ** Unconfigured: a business empty state naming no config key. Configured:
+    ** nothing at all.
+    *******************************************************************************/
+   @Test
+   void testNotConfiguredEmptyState() throws Exception
+   {
+      assertThat(html(WebPerfWidgets.NOT_CONFIGURED, Map.of())).as("configured shows nothing").isEmpty();
+
+      config.withLabRunner(null).withCruxClient(null);
+      String card = html(WebPerfWidgets.NOT_CONFIGURED, Map.of());
+      assertThat(card).contains("Page speed testing is not set up").contains("Ask an admin to add a Google PageSpeed API key.");
+      assertThat(card).doesNotContain("googleApiKey").doesNotContain("qbit config").doesNotContain("environment variable");
+   }
+
+
+
+   /*******************************************************************************
+    ** The admin widgets render for an admin, and are hidden (permission denied
+    ** under enforcement) for a session without the admin permission.
+    *******************************************************************************/
+   @Test
+   void testAdminWidgetsAdminOnly() throws Exception
+   {
+      for(String name : WebPerfWidgets.ADMIN)
+      {
+         assertThat(html(name, Map.of())).as(name + " for an admin").isNotEmpty();
+      }
+
+      WebPerfTestSupport.login(qInstance, "web_performance.read", "web_performance.write", "web_performance.view.hasAccess");
+      for(String name : WebPerfWidgets.ADMIN)
+      {
+         assertThat(qInstance.getWidget(config.qualify(name)).getPermissionRules().getDenyBehavior()).isEqualTo(com.kingsrook.qqq.backend.core.model.metadata.permissions.DenyBehavior.HIDDEN);
+         RenderWidgetInput input = new RenderWidgetInput().withWidgetMetaData(qInstance.getWidget(config.qualify(name)));
+         input.setPermissionEnforcement(com.kingsrook.qqq.backend.core.actions.permissions.PermissionEnforcement.ENFORCE);
+         org.junit.jupiter.api.Assertions.assertThrows(com.kingsrook.qqq.backend.core.exceptions.QPermissionDeniedException.class,
+            () -> new RenderWidgetAction().execute(input), name + " must not render without admin");
+         assertThat(com.kingsrook.qqq.backend.core.actions.permissions.PermissionsHelper.hasWidgetPermission(input, config.qualify(name))).isFalse();
+      }
+      assertThat(html(WebPerfWidgets.SITE_SCORES, Map.of())).as("business widgets still render").isNotEmpty();
+   }
+
+
+
+   /*******************************************************************************
     ** An instance with a content table "page", the QBit wired to it, and the
     ** local Google stand-in.
     *******************************************************************************/

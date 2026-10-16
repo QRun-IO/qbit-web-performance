@@ -4,6 +4,9 @@ All notable changes to this project are documented here. The format follows Keep
 
 ## [0.1.0] - Unreleased
 
+### Changed
+- The Performance home is business-only. The provider Setup readout and Recent Runs left the home's widget list (`WebPerfWidgets.HOME`); they are `WebPerfWidgets.ADMIN` (`Setup`, `RecentRuns`), gated to `<base>.admin.hasAccess` and hidden when denied, for a host to place on its Admin area. A new `NotConfigured` widget leads the home: while no Google API key is set it says "Page speed testing is not set up. Ask an admin to add a Google PageSpeed API key." (no config key names), and renders nothing once configured.
+
 ### Fixed
 - Read the QBit metadata version from the build so release artifacts report their actual version, matching the help bundle.
 - Use dropdowns for tier, scope, source, strategy, metric, comparator and severity, preserving existing stored values.
