@@ -59,6 +59,7 @@ import com.kingsrook.qqq.backend.core.model.dashboard.widgets.RawHTML;
 public final class WebPerfWidgets
 {
    public static final String SETUP           = "Setup";
+   public static final String NOT_CONFIGURED  = "NotConfigured";
    public static final String SITE_SCORES     = "SiteScores";
    public static final String TREND           = "Trend";
    public static final String SLOWEST_PAGES   = "SlowestPages";
@@ -67,8 +68,18 @@ public final class WebPerfWidgets
    public static final String FIELD_STATUS    = "FieldDataStatus";
    public static final String RECORD_PANEL    = "RecordPanel";
 
-   /** The home widgets, in order. */
-   public static final List<String> HOME = List.of(SETUP, SITE_SCORES, TREND, SLOWEST_PAGES, OPPORTUNITIES, FIELD_STATUS, RECENT_RUNS);
+   /** The business home's widgets, in order. No provider or run-queue detail (standard A-0). */
+   public static final List<String> HOME = List.of(NOT_CONFIGURED, SITE_SCORES, TREND, SLOWEST_PAGES, OPPORTUNITIES, FIELD_STATUS);
+
+   /**
+    * The system widgets (provider setup readout, run queue). Not on the home: a host places them on its
+    * Admin area. Each is gated to "&lt;base&gt;.admin.hasAccess" and hidden (not shown locked) without it.
+    */
+   public static final List<String> ADMIN = List.of(SETUP, RECENT_RUNS);
+
+   /** The business empty state shown on the home while no Google API key is set. */
+   public static final String NOT_CONFIGURED_TITLE = "Page speed testing is not set up";
+   public static final String NOT_CONFIGURED_BODY  = "Ask an admin to add a Google PageSpeed API key.";
 
    static final int TREND_WEEKS = 26;
 
@@ -411,6 +422,29 @@ public final class WebPerfWidgets
          {
             throw (new QException("Error loading recent runs", e));
          }
+      }
+   }
+
+
+
+   /*******************************************************************************
+    ** Not Configured: the home's business empty state. Shown only while lab tests
+    ** cannot run because no Google API key is set; says who can fix it and names
+    ** no configuration key. Renders nothing once the provider is configured.
+    *******************************************************************************/
+   public static class NotConfigured extends AbstractWidgetRenderer
+   {
+      /*******************************************************************************
+       ** Render.
+       *******************************************************************************/
+      @Override
+      public RenderWidgetOutput render(RenderWidgetInput input) throws QException
+      {
+         if(runtime(input).labRunner() != null)
+         {
+            return (html(""));
+         }
+         return (html("<div style=\"font-weight:600\">" + Html.escape(NOT_CONFIGURED_TITLE) + "</div>" + Html.muted(NOT_CONFIGURED_BODY)));
       }
    }
 

@@ -5,7 +5,7 @@ entries:
 - key: app:webPerformance;slot:help
   summary: Page speed tests, Google field data, budgets and regressions for your site.
   content: |
-    Use the Setup card to see what is configured and what to do next. Sync your pages, configure a lab runner and review your budgets. The dashboard shows site scores, trends, slow pages, opportunities, field data and recent runs.
+    Sync your pages and review your budgets, then run tests. The dashboard shows site scores, trends, slow pages, opportunities and field data. If page speed testing is not set up, it says so and tells you to ask an admin.
 
     Run **{{label:webPerformanceTestPageSpeed}}** for selected pages or **{{label:webPerformanceRunSiteAudit}}** for all enabled pages. Mobile and desktop are separate runs by default. Your host controls the enabled features, device strategies, daily run limit and scheduler. Without a configured runner, lab tests wait in the queue.
 
@@ -623,7 +623,9 @@ entries:
   content: |
     The scheduled check records observations in **{{label:web_performance_change_event}}**. Repeated observations update the existing event instead of creating duplicates.
 - key: widget:webPerformanceSetup;slot:label
-  summary: Check your tested pages, lab runner, budgets and field-data setup, with the next step for each.
+  summary: Admin only. Check your tested pages, lab runner, budgets and field-data setup, with the next step for each.
+- key: widget:webPerformanceNotConfigured;slot:label
+  summary: Says when page speed testing is not set up and who can fix it.
 - key: possibleValueSource:web_performance_target;slot:help
   summary: Choose a tested page.
 - key: possibleValueSource:web_performance_lab_run;slot:help
