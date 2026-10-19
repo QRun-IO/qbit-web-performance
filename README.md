@@ -72,6 +72,10 @@ Tier, Scope, Source, Strategy, Metric, Comparator and Severity use dropdowns wit
 
 The changelog's changeset 10 seeds 13 reference budgets (Google's "good" thresholds and the Lighthouse category bands); nothing else is seeded. The target table is filled by Sync pages from sitemap, and the lab, finding, report, field, regression, change and comparison tables are filled by the qbit as it runs (empty is a normal start). Every table's help (`help/qbit-web-performance.yaml`, shown on the table screen) says how its rows get created, and the Setup card on the home shows what still needs doing. Budgets with source RUM are not evaluated yet (no real-user source is wired); LAB and CRUX budgets are.
 
+## Scheduled audit quota
+
+Set `withMaxRunsPerDay(300)` in the host configuration to reserve headroom below the default 500-run cap. Key-page schedules, full audits and manually queued runs share that daily allowance in the configured time zone. Scheduled requests prioritize page/device pairs never queued before, then those queued least recently. Quota-skipped rows do not advance that rotation, so large sitemaps continue through the remaining pairs on later days instead of repeatedly testing the first pages. Existing queued/running pairs still merge; manual selection keeps its requested order.
+
 ## In-app help
 
 The QBit registers [`help/qbit-web-performance.yaml`](src/main/resources/help/qbit-web-performance.yaml) with QQQ help bundles (RC.7 or later). Registration is metadata-only; core skips startup synchronization when the host has no `helpContent` table. App and table empty-state help remains available without Help installed.

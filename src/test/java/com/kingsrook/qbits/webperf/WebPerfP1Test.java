@@ -272,6 +272,73 @@ class WebPerfP1Test
 
 
    /*******************************************************************************
+    ** An odd daily cap rotates individual device strategies, not just pages.
+    ** Skipped rows and repeated scheduling must not starve the remaining pairs.
+    *******************************************************************************/
+   @Test
+   void scheduledQuotaRotatesPagesAndStrategies() throws Exception
+   {
+      config.withMaxRunsPerDay(3);
+      Instant dayOne = Instant.parse("2026-10-19T12:00:00Z");
+      WebPerfService service = service();
+      service.applySync(service.planSync(sitemap), dayOne);
+      WebPerfService.QueuePlan first = service.enqueue(service.scheduledRequests(false, "audit", dayOne), dayOne);
+      assertEquals(3, first.queue().size());
+      assertEquals(3, first.overQuota().size());
+      assertEquals(0, service.enqueue(service.scheduledRequests(false, "audit", dayOne), dayOne).queue().size());
+      store().update("UPDATE {lab_run} SET status = 'SUCCEEDED' WHERE status = 'QUEUED'");
+
+      Instant dayTwo = dayOne.plusSeconds(86400);
+      WebPerfService.QueuePlan second = service.enqueue(service.scheduledRequests(false, "audit", dayTwo), dayTwo);
+      assertEquals(3, second.queue().size());
+      List<String> firstPairs = first.queue().stream().map(run -> run.targetId() + "|" + run.strategy()).toList();
+      assertThat(second.queue().stream().map(run -> run.targetId() + "|" + run.strategy()).toList())
+         .doesNotContainAnyElementsOf(firstPairs);
+      assertEquals(6, store().query("SELECT DISTINCT target_id, strategy FROM {lab_run} WHERE status <> 'SKIPPED_QUOTA'").size());
+      assertThat(service.scheduledRequests(true, "key pages", dayTwo)).hasSize(2)
+         .allSatisfy(run -> assertEquals(SITE + "/", run.url()));
+   }
+
+
+
+   /*******************************************************************************
+    ** Manual and key-page runs consume the same allowance as the full audit.
+    ** Persisted history rotates the remaining pairs after a service restart.
+    *******************************************************************************/
+   @Test
+   void scheduledQuotaSharesAllowanceAndSurvivesRestart() throws Exception
+   {
+      config.withMaxRunsPerDay(3);
+      Instant day = Instant.parse("2026-10-19T12:00:00Z");
+      WebPerfService service = service();
+      service.applySync(service.planSync(sitemap), day);
+      List<WebPerfService.RunRequest> manual = service.requestsFor(service.enabledTargets(false), "MANUAL", "selected page", day);
+      assertEquals(1, service.enqueue(List.of(manual.get(3)), day).queue().size());
+      assertEquals(2, service.enqueue(service.scheduledRequests(true, "key pages", day), day).queue().size());
+      assertEquals(0, service.enqueue(service.scheduledRequests(false, "audit", day), day).queue().size());
+      store().update("UPDATE {lab_run} SET status = 'SUCCEEDED' WHERE status = 'QUEUED'");
+
+      List<String> rotated = new ArrayList<>();
+      for(int nextDay = 1; nextDay <= 3; nextDay++)
+      {
+         Instant now = day.plusSeconds(86400L * nextDay);
+         WebPerfService restarted = new WebPerfService(new WebPerfRuntime(config), store());
+         assertEquals(2, restarted.enqueue(restarted.scheduledRequests(true, "key pages", now), now).queue().size());
+         WebPerfService.QueuePlan audit = restarted.enqueue(restarted.scheduledRequests(false, "audit", now), now);
+         assertEquals(1, audit.queue().size());
+         assertEquals(2, audit.merged().size());
+         WebPerfService.RunRequest queued = audit.queue().get(0);
+         assertThat(queued.url()).isNotEqualTo(SITE + "/");
+         rotated.add(queued.targetId() + "|" + queued.strategy());
+         store().update("UPDATE {lab_run} SET status = 'SUCCEEDED' WHERE status = 'QUEUED'");
+      }
+      assertThat(rotated).doesNotHaveDuplicates();
+      assertEquals(6, store().query("SELECT DISTINCT target_id, strategy FROM {lab_run} WHERE status <> 'SKIPPED_QUOTA'").size());
+   }
+
+
+
+   /*******************************************************************************
     ** The Setup card reports pages, budgets, the lab runner and field data from
     ** the runtime's own resolution, with the next step for each.
     *******************************************************************************/
