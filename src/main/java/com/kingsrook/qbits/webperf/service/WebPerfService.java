@@ -31,6 +31,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
@@ -443,6 +445,32 @@ public class WebPerfService
             requests.add(new RunRequest(WebPerfStore.asLong(target.get("id")), (String) target.get("url"), strategy, trigger, triggerRef, batch, notBefore));
          }
       }
+      return (requests);
+   }
+
+
+
+   /*******************************************************************************
+    ** Scheduled requests, least recently queued page/strategy first. Quota skips
+    ** do not advance the rotation; never-tested pairs precede historical runs.
+    ** Manual requests keep the caller's ordering.
+    **
+    ** @param keyOnly only KEY pages
+    ** @param reason schedule description
+    ** @param now earliest start
+    ** @return requests ordered fairly across daily quota boundaries
+    ** @throws SQLException on a history read failure
+    *******************************************************************************/
+   public List<RunRequest> scheduledRequests(boolean keyOnly, String reason, Instant now) throws SQLException
+   {
+      List<RunRequest> requests = requestsFor(enabledTargets(keyOnly), "SCHEDULE", reason, now);
+      Map<String, Instant> lastQueued = new HashMap<>();
+      for(Map<String, Object> row : store.query("SELECT r.target_id, r.strategy, MAX(r.queued_at) AS last_queued FROM {lab_run} r JOIN {target} t ON t.id = r.target_id WHERE t.site_key = ? AND r.status <> 'SKIPPED_QUOTA' GROUP BY r.target_id, r.strategy", siteKey()))
+      {
+         lastQueued.put(WebPerfStore.asLong(row.get("target_id")) + "|" + row.get("strategy"), (Instant) row.get("last_queued"));
+      }
+      requests.sort(Comparator.comparing(request -> lastQueued.get(request.targetId() + "|" + request.strategy()),
+         Comparator.nullsFirst(Comparator.naturalOrder())));
       return (requests);
    }
 
