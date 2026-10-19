@@ -209,7 +209,8 @@ public final class ScheduledSteps
       try
       {
          WebPerfService           service = WebPerfRuntime.forInput(input).service();
-         WebPerfService.QueuePlan plan    = service.enqueue(service.requestsFor(service.enabledTargets(keyOnly), "SCHEDULE", reason, Instant.now()), Instant.now());
+         Instant                  now     = Instant.now();
+         WebPerfService.QueuePlan plan    = service.enqueue(service.scheduledRequests(keyOnly, reason, now), now);
          LOG.info("Web performance tests queued", logPair("reason", reason), logPair("queued", plan.queue().size()), logPair("merged", plan.merged().size()),
             logPair("overCap", plan.overQuota().size()));
       }
